@@ -139,6 +139,21 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
             await this.viewCommitOnGitHub(message.hash);
           }
           break;
+        case 'createBranch':
+          if (typeof message.branchName === 'string') {
+            await this.createBranch(message.branchName);
+          }
+          break;
+        case 'createBranchWithChanges':
+          if (typeof message.branchName === 'string' && typeof message.bringChanges === 'boolean') {
+            await this.createBranchWithChanges(message.branchName, message.bringChanges);
+          }
+          break;
+        case 'loadMoreCommits':
+          if (typeof message.offset === 'number') {
+            await this.loadMoreCommits(message.offset);
+          }
+          break;
         case 'selectCommit':
           if (typeof message.hash === 'string') {
             await this.postCommitDetail(message.hash);
@@ -195,6 +210,9 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
         date: this.formatRelativeTime(new Date(commit.date))
       }));
 
+      // Check if there are more commits available
+      const hasMoreCommits = log.all.length === 50;
+
       const branch = await git.branch();
 
       // Get branch activity dates
@@ -215,7 +233,9 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
 
       this.view.webview.postMessage({
         command: 'updateHistory',
-        history: commits
+        history: commits,
+        hasMoreCommits,
+        offset: 0
       });
 
       this.view.webview.postMessage({
@@ -532,6 +552,76 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
     }
   }
 
+  private async getFileIconInfo(filePath: string): Promise<{ iconClass?: string; iconUri?: string }> {
+    try {
+      // Use VS Code's ThemeIcon.File to get the appropriate file icon
+      const uri = vscode.Uri.file(filePath);
+
+      // Create a fake file URI to get the file icon from VS Code's theme
+      // This approach uses VS Code's internal file icon resolution
+      const fileIcon = vscode.ThemeIcon.File;
+
+      // Get the file icon URI that the webview can use
+      // Note: This is a simplified approach. A full implementation would need
+      // to access VS Code's file icon contribution point directly
+
+      const ext = path.extname(filePath).toLowerCase();
+      const baseName = path.basename(filePath).toLowerCase();
+
+      // Use VS Code's codicon for file types as a fallback
+      // These work with the default VS Code theme and most icon themes
+      let iconName = 'file';
+
+      // Special file names
+      if (baseName === 'package.json') iconName = 'package';
+      else if (baseName === 'tsconfig.json') iconName = 'gear';
+      else if (baseName === '.gitignore') iconName = 'git-commit';
+      else if (baseName.startsWith('.env')) iconName = 'gear';
+      else if (baseName === 'readme.md') iconName = 'book';
+      else if (baseName.startsWith('dockerfile')) iconName = 'file-binary';
+
+      // File extensions
+      else {
+        switch (ext) {
+          case '.ts': iconName = 'symbol-class'; break;
+          case '.tsx': iconName = 'symbol-class'; break;
+          case '.js': iconName = 'symbol-method'; break;
+          case '.jsx': iconName = 'symbol-method'; break;
+          case '.json': iconName = 'json'; break;
+          case '.html': iconName = 'code'; break;
+          case '.css': iconName = 'symbol-color'; break;
+          case '.scss': iconName = 'symbol-color'; break;
+          case '.md': iconName = 'markdown'; break;
+          case '.yml':
+          case '.yaml': iconName = 'settings-gear'; break;
+          case '.xml': iconName = 'code'; break;
+          case '.svg': iconName = 'file-media'; break;
+          case '.png':
+          case '.jpg':
+          case '.jpeg':
+          case '.gif': iconName = 'file-media'; break;
+          case '.pdf': iconName = 'file-pdf'; break;
+          case '.zip': iconName = 'file-zip'; break;
+          case '.py': iconName = 'symbol-namespace'; break;
+          case '.java': iconName = 'symbol-class'; break;
+          case '.go': iconName = 'symbol-method'; break;
+          case '.rs': iconName = 'symbol-misc'; break;
+          case '.vue': iconName = 'symbol-namespace'; break;
+          case '.sql': iconName = 'database'; break;
+          case '.lock': iconName = 'lock'; break;
+          case '.txt': iconName = 'file-text'; break;
+          case '.log': iconName = 'output'; break;
+          default: iconName = 'file'; break;
+        }
+      }
+
+      // Return the codicon class name that the webview can use
+      return { iconClass: `codicon codicon-${iconName}` };
+    } catch (error) {
+      return { iconClass: 'codicon codicon-file' };
+    }
+  }
+
   private async getCommitDetails(hash: string): Promise<void> {
     const repository = getPrimaryRepository(this.repositories);
     if (!repository || !hash) return;
@@ -558,6 +648,8 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
         status: string;
         additions: number;
         deletions: number;
+        iconClass?: string;
+        iconUri?: string;
       }> = [];
 
       let totalAdditions = 0;
@@ -584,11 +676,13 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
         const deletions = delStr === '-' ? 0 : parseInt(delStr, 10) || 0;
         const status = statusMap.get(filePath) || 'M';
 
+        const iconInfo = await this.getFileIconInfo(filePath);
         files.push({
           path: filePath,
           status,
           additions,
-          deletions
+          deletions,
+          ...iconInfo
         });
 
         totalAdditions += additions;
@@ -701,8 +795,9 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource} 'unsafe-inline'; img-src https: data:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline' https:; script-src ${webview.cspSource} 'unsafe-inline'; img-src https: data:; font-src ${webview.cspSource} https:;">
     <title>GitHub Desktop Timeline</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@vscode/codicons@0.0.35/dist/codicon.css">
     <style>
         * {
             margin: 0;
@@ -726,6 +821,12 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
             height: 100%;
             margin: 0;
             padding: 0;
+        }
+        .codicon {
+            font-family: 'codicon';
+            cursor: default;
+            user-select: none;
+            color: var(--vscode-foreground);
         }
     </style>
 </head>
@@ -874,6 +975,90 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
       vscode.env.openExternal(vscode.Uri.parse(commitUrl));
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to open GitHub: ${error}`);
+    }
+  }
+
+  private async createBranch(branchName: string): Promise<void> {
+    const repository = getPrimaryRepository(this.repositories);
+    if (!repository || !branchName) return;
+
+    try {
+      const git = simpleGit(repository.localPath);
+      await git.checkoutLocalBranch(branchName);
+      vscode.window.showInformationMessage(`Created and switched to branch '${branchName}'`);
+      await this.postState();
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to create branch: ${error}`);
+    }
+  }
+
+  private async createBranchWithChanges(branchName: string, bringChanges: boolean): Promise<void> {
+    const repository = getPrimaryRepository(this.repositories);
+    if (!repository || !branchName) return;
+
+    try {
+      const git = simpleGit(repository.localPath);
+
+      if (bringChanges) {
+        // Create branch and bring changes
+        await git.checkoutLocalBranch(branchName);
+        vscode.window.showInformationMessage(`Created branch '${branchName}' with uncommitted changes`);
+      } else {
+        // Stash changes, create branch, then switch back to restore stash
+        await git.stash(['push', '-m', 'Auto-stash before branch creation']);
+        await git.checkoutLocalBranch(branchName);
+        vscode.window.showInformationMessage(`Created branch '${branchName}' and stashed changes`);
+      }
+
+      await this.postState();
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to create branch with changes: ${error}`);
+    }
+  }
+
+  private async loadMoreCommits(offset: number): Promise<void> {
+    if (!this.view) return;
+
+    const repository = getPrimaryRepository(this.repositories);
+    if (!repository) return;
+
+    try {
+      const git = simpleGit(repository.localPath);
+      // Use raw git command with proper skip syntax
+      const logOutput = await git.raw([
+        'log',
+        '--oneline',
+        '--format=%H%x09%an%x09%ae%x09%ad%x09%s',
+        '--date=iso',
+        '--max-count=50',
+        `--skip=${offset}`
+      ]);
+
+      const lines = logOutput.trim().split('\n').filter(line => line.trim());
+      const commits: any[] = lines.map((line) => {
+        const [hash, author, email, date, ...messageParts] = line.split('\t');
+        const message = messageParts.join('\t'); // Rejoin in case message contains tabs
+
+        return {
+          hash,
+          message,
+          author: author,
+          email: email,
+          date: this.formatRelativeTime(new Date(date))
+        };
+      });
+
+      // Check if there are more commits available
+      const hasMoreCommits = commits.length === 50;
+
+      this.view.webview.postMessage({
+        command: 'loadMoreCommitsResponse',
+        history: commits,
+        hasMoreCommits,
+        offset: offset + 50
+      });
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to load more commits: ${error}`);
     }
   }
 }

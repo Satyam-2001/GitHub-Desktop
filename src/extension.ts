@@ -1,3 +1,4 @@
+import { iconThemeService } from './iconThemeService';
 import * as path from 'path';
 import { promises as fs } from 'fs';
 import * as vscode from 'vscode';
@@ -345,3 +346,4 @@ async function linkUnassignedRepositories(
     await repositories.updateRepository(repo.id, { accountId });
   }
 }
+

@@ -25,7 +25,12 @@ export const App: React.FC<AppProps> = ({ bridge, initialState }) => {
           setState((prev) => ({ ...prev, changes: message.changes }));
           break;
         case 'updateHistory':
-          setState((prev) => ({ ...prev, history: message.history }));
+          setState((prev) => ({
+            ...prev,
+            history: message.history,
+            hasMoreCommits: message.hasMoreCommits,
+            commitsOffset: message.offset
+          }));
           break;
         case 'updateBranches':
           setState((prev) => ({
@@ -86,6 +91,8 @@ export const App: React.FC<AppProps> = ({ bridge, initialState }) => {
           currentBranch={state.currentBranch}
           repository={state.repository}
           bridge={bridge}
+          hasMoreCommits={state.hasMoreCommits}
+          commitsOffset={state.commitsOffset}
         />
       </ThemeProvider>
     </QueryClientProvider>

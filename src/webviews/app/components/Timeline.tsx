@@ -17,7 +17,14 @@ import {
   MenuItem,
   MenuList,
   Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  DialogContentText,
 } from '@mui/material';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import {
   Refresh as RefreshIcon,
   CloudUpload as PushIcon,
@@ -28,6 +35,7 @@ import {
   RestartAlt as ResetIcon,
   CheckCircle as CheckoutIcon,
   Reorder as ReorderIcon,
+  CallSplit as NewBranchIcon,
   Undo as RevertIcon,
   AccountTree as BranchIcon,
   LocalOffer as TagIcon,
@@ -46,6 +54,8 @@ interface TimelineProps {
   currentBranch: string | null;
   repository: Repository | null;
   bridge: VSCodeBridge;
+  hasMoreCommits?: boolean;
+  commitsOffset?: number;
 }
 
 export const Timeline: React.FC<TimelineProps> = ({
@@ -56,6 +66,8 @@ export const Timeline: React.FC<TimelineProps> = ({
   currentBranch,
   repository,
   bridge,
+  hasMoreCommits = false,
+  commitsOffset = 0,
 }) => {
   const [activeTab, setActiveTab] = useState<'changes' | 'history'>('changes');
   const [commitMessage, setCommitMessage] = useState('');
@@ -65,6 +77,35 @@ export const Timeline: React.FC<TimelineProps> = ({
     mouseY: number;
     commit: GitCommit | null;
   } | null>(null);
+  const [newBranchDialog, setNewBranchDialog] = useState(false);
+  const [newBranchName, setNewBranchName] = useState('');
+  const [uncommittedChangesDialog, setUncommittedChangesDialog] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [allCommits, setAllCommits] = useState<GitCommit[]>([]);
+
+  // Update allCommits when history changes (initial load or refresh)
+  useEffect(() => {
+    if (commitsOffset === 0) {
+      setAllCommits(history);
+    }
+  }, [history, commitsOffset]);
+
+  // Handle load more commits response
+  useEffect(() => {
+    const handleMessage = (message: any) => {
+      if (message.command === 'loadMoreCommitsResponse') {
+        setAllCommits(prev => [...prev, ...message.history]);
+        setIsLoadingMore(false);
+      }
+    };
+
+    // Listen for load more response
+    bridge.onMessage(handleMessage);
+
+    return () => {
+      // Cleanup if needed
+    };
+  }, [bridge]);
 
   const handleTabChange = (tab: 'changes' | 'history') => {
     setActiveTab(tab);
@@ -107,6 +148,84 @@ export const Timeline: React.FC<TimelineProps> = ({
 
   const handleRefresh = () => {
     bridge.sendMessage('refresh');
+  };
+
+  const handleCreateNewBranch = () => {
+    // Check if there are uncommitted changes (any changes in the working directory)
+    const hasUncommittedChanges = changes.length > 0;
+
+    if (hasUncommittedChanges) {
+      setUncommittedChangesDialog(true);
+    } else {
+      setNewBranchDialog(true);
+    }
+  };
+
+  const handleCreateBranchWithChanges = (bringChanges: boolean) => {
+    setUncommittedChangesDialog(false);
+
+    if (bringChanges) {
+      // Create branch and bring changes
+      bridge.sendMessage('createBranchWithChanges', {
+        branchName: newBranchName,
+        bringChanges: true
+      });
+    } else {
+      // Stash changes and create branch
+      bridge.sendMessage('createBranchWithChanges', {
+        branchName: newBranchName,
+        bringChanges: false
+      });
+    }
+
+    setNewBranchName('');
+    setNewBranchDialog(true);
+  };
+
+  const handleConfirmCreateBranch = () => {
+    if (newBranchName.trim()) {
+      bridge.sendMessage('createBranch', { branchName: newBranchName.trim() });
+      setNewBranchDialog(false);
+      setNewBranchName('');
+    }
+  };
+
+  const handleLoadMoreCommits = () => {
+    if (!isLoadingMore && hasMoreCommits) {
+      setIsLoadingMore(true);
+      bridge.sendMessage('loadMoreCommits', { offset: allCommits.length });
+    }
+  };
+
+  const formatCommitDate = (dateString: string) => {
+    // Initialize dayjs plugins
+    dayjs.extend(relativeTime);
+
+    // If it's already a relative format (contains "ago"), return as is
+    if (dateString.includes('ago') || dateString.includes('just now')) {
+      return dateString;
+    }
+
+    // Parse the date using dayjs
+    const date = dayjs(dateString);
+
+    // Check if it's a valid date
+    if (!date.isValid()) {
+      return dateString; // Return original if parsing fails
+    }
+
+    const now = dayjs();
+    const diffInDays = now.diff(date, 'day');
+
+    // For dates within the last 7 days, show relative format
+    if (diffInDays <= 7) {
+      if (diffInDays === 0) return 'today';
+      if (diffInDays === 1) return 'yesterday';
+      return `${diffInDays} days ago`;
+    }
+
+    // For older dates, show formatted date with time
+    return date.format('D MMMM, YYYY [at] HH:mm');
   };
 
   const handleCommitSelect = (commit: GitCommit) => {
@@ -211,10 +330,24 @@ export const Timeline: React.FC<TimelineProps> = ({
             bridge={bridge}
           />
           <IconButton
-            onClick={handleRefresh}
+            onClick={handleCreateNewBranch}
             size="small"
             sx={{
               ml: 'auto',
+              mr: 1,
+              color: 'var(--vscode-foreground)',
+              '&:hover': {
+                bgcolor: 'var(--vscode-list-hoverBackground)'
+              }
+            }}
+            title="Create New Branch"
+          >
+            <NewBranchIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+          <IconButton
+            onClick={handleRefresh}
+            size="small"
+            sx={{
               color: 'var(--vscode-foreground)',
               '&:hover': {
                 bgcolor: 'var(--vscode-list-hoverBackground)'
@@ -567,9 +700,34 @@ export const Timeline: React.FC<TimelineProps> = ({
         )}
 
         {activeTab === 'history' && (
-          <Box sx={{ flex: 1, overflow: 'auto' }}>
+          <Box
+            sx={{
+              flex: 1,
+              overflow: 'auto',
+              '&::-webkit-scrollbar': {
+                width: '8px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: 'var(--vscode-scrollbarSlider-background)',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: 'var(--vscode-scrollbarSlider-background)',
+                borderRadius: '4px',
+              },
+              '&::-webkit-scrollbar-thumb:hover': {
+                background: 'var(--vscode-scrollbarSlider-hoverBackground)',
+              },
+            }}
+            onScroll={(e) => {
+              const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+              // Load more when scrolled to bottom
+              if (scrollHeight - scrollTop <= clientHeight + 100 && hasMoreCommits && !isLoadingMore) {
+                handleLoadMoreCommits();
+              }
+            }}
+          >
               <List sx={{ py: 0 }}>
-                {history.map((commit) => (
+                {allCommits.map((commit) => (
                   <ListItem
                     key={commit.hash}
                     sx={{
@@ -627,7 +785,7 @@ export const Timeline: React.FC<TimelineProps> = ({
                             fontSize: '12px',
                             color: 'var(--vscode-descriptionForeground)'
                           }}>
-                            {commit.date}
+                            {formatCommitDate(commit.date)}
                           </Typography>
                           <Typography sx={{
                             fontSize: '11px',
@@ -643,7 +801,43 @@ export const Timeline: React.FC<TimelineProps> = ({
                   </ListItem>
                 ))}
               </List>
-              {history.length === 0 && (
+
+              {/* Loading indicator and load more button */}
+              {hasMoreCommits && (
+                <Box sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  p: 2,
+                  borderTop: '1px solid var(--vscode-sideBarSectionHeader-border)'
+                }}>
+                  {isLoadingMore ? (
+                    <Typography sx={{
+                      fontSize: '13px',
+                      color: 'var(--vscode-descriptionForeground)'
+                    }}>
+                      Loading more commits...
+                    </Typography>
+                  ) : (
+                    <Button
+                      size="small"
+                      onClick={handleLoadMoreCommits}
+                      sx={{
+                        fontSize: '12px',
+                        textTransform: 'none',
+                        color: 'var(--vscode-button-foreground)',
+                        bgcolor: 'var(--vscode-button-background)',
+                        '&:hover': {
+                          bgcolor: 'var(--vscode-button-hoverBackground)'
+                        }
+                      }}
+                    >
+                      Load More Commits
+                    </Button>
+                  )}
+                </Box>
+              )}
+
+              {allCommits.length === 0 && !isLoadingMore && (
                 <Box sx={{
                   display: 'flex',
                   flexDirection: 'column',
@@ -910,6 +1104,105 @@ export const Timeline: React.FC<TimelineProps> = ({
           </Paper>
         </>
       )}
+
+      {/* New Branch Dialog */}
+      <Dialog
+        open={newBranchDialog}
+        onClose={() => setNewBranchDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Create New Branch</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Enter a name for the new branch:
+          </DialogContentText>
+          <TextField
+            autoFocus
+            fullWidth
+            value={newBranchName}
+            onChange={(e) => setNewBranchName(e.target.value)}
+            placeholder="feature/new-feature"
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleConfirmCreateBranch();
+              }
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setNewBranchDialog(false)}
+            sx={{ color: 'var(--vscode-button-secondaryForeground)' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmCreateBranch}
+            disabled={!newBranchName.trim()}
+            sx={{
+              bgcolor: 'var(--vscode-button-background)',
+              color: 'var(--vscode-button-foreground)',
+              '&:hover': {
+                bgcolor: 'var(--vscode-button-hoverBackground)'
+              }
+            }}
+          >
+            Create Branch
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Uncommitted Changes Dialog */}
+      <Dialog
+        open={uncommittedChangesDialog}
+        onClose={() => setUncommittedChangesDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Uncommitted Changes</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            You have uncommitted changes. What would you like to do with them?
+          </DialogContentText>
+          <TextField
+            fullWidth
+            value={newBranchName}
+            onChange={(e) => setNewBranchName(e.target.value)}
+            placeholder="feature/new-feature"
+            label="New branch name"
+            sx={{ mb: 2 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setUncommittedChangesDialog(false)}
+            sx={{ color: 'var(--vscode-button-secondaryForeground)' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => handleCreateBranchWithChanges(false)}
+            disabled={!newBranchName.trim()}
+            sx={{ color: 'var(--vscode-button-secondaryForeground)' }}
+          >
+            Leave Changes
+          </Button>
+          <Button
+            onClick={() => handleCreateBranchWithChanges(true)}
+            disabled={!newBranchName.trim()}
+            sx={{
+              bgcolor: 'var(--vscode-button-background)',
+              color: 'var(--vscode-button-foreground)',
+              '&:hover': {
+                bgcolor: 'var(--vscode-button-hoverBackground)'
+              }
+            }}
+          >
+            Bring Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

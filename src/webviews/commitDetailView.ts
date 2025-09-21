@@ -1,6 +1,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import simpleGit from 'simple-git';
+import { iconThemeService } from '../iconThemeService';
 import { RepositoryManager } from '../repositoryManager';
 import { getPrimaryRepository } from '../utils/repoSelection';
 
@@ -15,6 +16,7 @@ interface CommitDetail {
     status: string;
     additions: number;
     deletions: number;
+    iconUri?: string;
   }>;
   totalAdditions: number;
   totalDeletions: number;
@@ -102,6 +104,7 @@ export class CommitDetailViewProvider {
         status: string;
         additions: number;
         deletions: number;
+        iconUri?: string;
       }> = [];
 
       let totalAdditions = 0;
@@ -128,11 +131,16 @@ export class CommitDetailViewProvider {
         const deletions = delStr === '-' ? 0 : parseInt(delStr, 10) || 0;
         const status = statusMap.get(filePath) || 'M';
 
+        const iconInfo = this.panel
+          ? await iconThemeService.getIconForFile(this.panel.webview, filePath)
+          : undefined;
+
         files.push({
           path: filePath,
           status,
           additions,
-          deletions
+          deletions,
+          iconUri: iconInfo?.iconUri
         });
 
         totalAdditions += additions;
@@ -202,6 +210,10 @@ export class CommitDetailViewProvider {
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to open file diff: ${error}`);
     }
+  }
+
+  public async refresh(): Promise<void> {
+    await this.loadCommitDetails();
   }
 
   private formatRelativeTime(date: Date): string {

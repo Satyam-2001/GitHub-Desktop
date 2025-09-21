@@ -12,6 +12,8 @@ export interface InitialWebviewState {
   repository: Repository | null;
   accounts: GitHubAccount[];
   activeAccount: GitHubAccount | null;
+  hasMoreCommits?: boolean;
+  commitsOffset?: number;
 }
 
 export interface GitChange {

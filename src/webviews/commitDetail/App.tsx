@@ -14,6 +14,8 @@ interface CommitDetail {
     status: string;
     additions: number;
     deletions: number;
+    iconUri?: string;
+    iconClass?: string;
   }>;
   totalAdditions: number;
   totalDeletions: number;
