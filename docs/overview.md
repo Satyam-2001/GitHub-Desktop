@@ -35,8 +35,8 @@ activate(context: vscode.ExtensionContext)
 - Emits `onDidChangeRepositories` whenever the repository list mutates.
 
 ### TimelineViewProvider (`src/webviews/timelineView.ts`)
-- Supplies the HTML/CSS/JS for the combined Changes & History panel.
-- Reads git status/log output via `simple-git`, formats commit cards, and renders file-level detail when a history entry is selected.
+- Supplies the HTML/CSS/JS for the combined Changes & History panel with GitHub Desktop-style commit cards.
+- Reads git status/log output via `simple-git`, formats commit cards, and renders file-level detail, inline diffs, and responds to interactions (file selection, refresh).
 - Refreshes automatically when repositories change, when files are saved, or when the user triggers a manual refresh.
 
 ### Tree Data Providers (`src/treeViews/`)
@@ -87,3 +87,4 @@ Tokens are never written to disk outside VS Code's secure storage. If secret sto
 3. Launch the **Run Extension** debug configuration (see `.vscode/launch.json`).
 
 Tests are not yet implemented. When adding tests, prefer VS Code's extension test harness and bind them in `package.json` scripts.
+

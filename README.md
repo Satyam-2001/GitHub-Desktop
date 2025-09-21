@@ -21,7 +21,7 @@ A VS Code extension that mirrors common GitHub Desktop workflows. It focuses on 
 1. Open the **GitHub Desktop** view in the activity bar.
 2. Run **GitHub Desktop: Sign In**. If the GitHub CLI (`gh`) is signed in, its token will be reused automatically; otherwise provide a PAT with at least `repo`, `read:org`, and `workflow` scopes.
 3. Repeat sign-in for additional accounts. The accounts tree view highlights the active account.
-4. Open any Git repository in the workspace—GitHub Desktop will detect it and populate the combined **Changes & History** view automatically. Use **GitHub Desktop: Clone Repository** only when you need to bring a new project locally.
+4. Open any Git repository in the workspace—GitHub Desktop will detect it and populate the combined **Changes & History** view automatically, including inline diffs for each file. Use **GitHub Desktop: Clone Repository** only when you need to bring a new project locally.
 5. Trigger **GitHub Desktop: Switch Active Account** at any time to operate with a different account.
 6. When viewing the **Repositories** tree, select an entry to open it in the current window, or run **GitHub Desktop: Create Issue** to open an issue under the corresponding repository.
 7. Use **GitHub Desktop: Refresh Views** if you need to force-refresh the panels.
@@ -42,3 +42,4 @@ This extension stores account metadata in the global VS Code state and persists 
 - Fetch and display pull requests, branches, and status checks.
 - Offer history, commit, stash, and branch management experiences similar to GitHub Desktop.
 - Surface GitHub notifications per account.
+

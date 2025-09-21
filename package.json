@@ -1,111 +1,130 @@
 {
-    "name":  "vscode-github-desktop",
-    "displayName":  "GitHub Desktop for VS Code",
-    "description":  "A VS Code extension that mirrors GitHub Desktop workflows including multi-account support.",
-    "version":  "0.0.1",
-    "publisher":  "your-name",
-    "engines":  {
-                    "vscode":  "\u003e=1.84.0"
+    "name": "vscode-github-desktop",
+    "displayName": "GitHub Desktop for VS Code",
+    "description": "A VS Code extension that mirrors GitHub Desktop workflows including multi-account support.",
+    "version": "0.0.1",
+    "publisher": "your-name",
+    "engines": {
+        "vscode": ">=1.84.0"
+    },
+    "categories": [
+        "SCM",
+        "Source Control"
+    ],
+    "activationEvents": [
+        "onStartupFinished",
+        "onCommand:githubDesktop.signIn",
+        "onCommand:githubDesktop.switchAccount",
+        "onCommand:githubDesktop.cloneRepository",
+        "onCommand:githubDesktop.openRepository",
+        "onCommand:githubDesktop.createIssue",
+        "onView:githubDesktop.accounts",
+        "onView:githubDesktop.repositories",
+        "onView:githubDesktop.timeline"
+    ],
+    "main": "./dist/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "githubDesktop.signIn",
+                "title": "GitHub Desktop: Sign In",
+                "category": "GitHub Desktop"
+            },
+            {
+                "command": "githubDesktop.signOut",
+                "title": "GitHub Desktop: Sign Out",
+                "category": "GitHub Desktop"
+            },
+            {
+                "command": "githubDesktop.switchAccount",
+                "title": "GitHub Desktop: Switch Active Account",
+                "category": "GitHub Desktop"
+            },
+            {
+                "command": "githubDesktop.cloneRepository",
+                "title": "GitHub Desktop: Clone Repository",
+                "category": "GitHub Desktop"
+            },
+            {
+                "command": "githubDesktop.openRepository",
+                "title": "GitHub Desktop: Open Repository",
+                "category": "GitHub Desktop"
+            },
+            {
+                "command": "githubDesktop.createIssue",
+                "title": "GitHub Desktop: Create Issue",
+                "category": "GitHub Desktop"
+            },
+            {
+                "command": "githubDesktop.refreshViews",
+                "title": "GitHub Desktop: Refresh Views",
+                "category": "GitHub Desktop"
+            }
+        ],
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "githubDesktop",
+                    "title": "GitHub Desktop",
+                    "icon": "media/github-desktop-icon.svg"
+                }
+            ]
+        },
+        "views": {
+            "githubDesktop": [
+                {
+                    "id": "githubDesktop.timeline",
+                    "name": "Changes & History",
+                    "type": "webview"
                 },
-    "categories":  [
-                       "SCM",
-                       "Source Control"
-                   ],
-    "activationEvents":  [
-                             "onStartupFinished",
-                             "onCommand:githubDesktop.signIn",
-                             "onCommand:githubDesktop.switchAccount",
-                             "onCommand:githubDesktop.cloneRepository",
-                             "onCommand:githubDesktop.openRepository",
-                             "onCommand:githubDesktop.createIssue",
-                             "onView:githubDesktop.accounts",
-                             "onView:githubDesktop.repositories",
-                             "onView:githubDesktop.timeline"
-                         ],
-    "main":  "./dist/extension.js",
-    "contributes":  {
-                        "commands":  [
-                                         {
-                                             "command":  "githubDesktop.signIn",
-                                             "title":  "GitHub Desktop: Sign In",
-                                             "category":  "GitHub Desktop"
-                                         },
-                                         {
-                                             "command":  "githubDesktop.signOut",
-                                             "title":  "GitHub Desktop: Sign Out",
-                                             "category":  "GitHub Desktop"
-                                         },
-                                         {
-                                             "command":  "githubDesktop.switchAccount",
-                                             "title":  "GitHub Desktop: Switch Active Account",
-                                             "category":  "GitHub Desktop"
-                                         },
-                                         {
-                                             "command":  "githubDesktop.cloneRepository",
-                                             "title":  "GitHub Desktop: Clone Repository",
-                                             "category":  "GitHub Desktop"
-                                         },
-                                         {
-                                             "command":  "githubDesktop.openRepository",
-                                             "title":  "GitHub Desktop: Open Repository",
-                                             "category":  "GitHub Desktop"
-                                         },
-                                         {
-                                             "command":  "githubDesktop.createIssue",
-                                             "title":  "GitHub Desktop: Create Issue",
-                                             "category":  "GitHub Desktop"
-                                         },
-                                         {
-                                             "command":  "githubDesktop.refreshViews",
-                                             "title":  "GitHub Desktop: Refresh Views",
-                                             "category":  "GitHub Desktop"
-                                         }
-                                     ],
-                        "viewsContainers":  {
-                                                "activitybar":  [
-                                                                    {
-                                                                        "id":  "githubDesktop",
-                                                                        "title":  "GitHub Desktop",
-                                                                        "icon":  "media/github-desktop-icon.svg"
-                                                                    }
-                                                                ]
-                                            },
-                        "views":  {
-                                      "githubDesktop":  [
-                                                            {
-                                                                "id":  "githubDesktop.timeline",
-                                                                "name":  "Changes \u0026 History",
-                                                                "type":  "webview"
-                                                            },
-                                                            {
-                                                                "id":  "githubDesktop.accounts",
-                                                                "name":  "Accounts",
-                                                                "collapsed":  true
-                                                            },
-                                                            {
-                                                                "id":  "githubDesktop.repositories",
-                                                                "name":  "Repositories",
-                                                                "collapsed":  true
-                                                            }
-                                                        ]
-                                  }
-                    },
-    "scripts":  {
-                    "compile":  "tsc -p .",
-                    "watch":  "tsc -watch -p .",
-                    "package":  "vsce package",
-                    "test":  "npm run compile \u0026\u0026 node ./out/test/runTest.js"
+                {
+                    "id": "githubDesktop.accounts",
+                    "name": "Accounts",
+                    "collapsed": true
                 },
-    "devDependencies":  {
-                            "@types/node":  "18.x",
-                            "typescript":  "^5.3.3",
-                            "@types/vscode":  "^1.84.0",
-                            "ts-node":  "^10.9.2",
-                            "rimraf":  "^5.0.5"
-                        },
-    "dependencies":  {
-                         "@octokit/rest":  "^20.0.2",
-                         "@octokit/auth-oauth-device":  "^4.0.3",
-                         "simple-git":  "^3.21.0"
-                     }
+                {
+                    "id": "githubDesktop.repositories",
+                    "name": "Repositories",
+                    "collapsed": true
+                }
+            ]
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile && npm run build-webview",
+        "compile": "webpack --mode production",
+        "build-webview": "vite build --config vite.webview.config.ts",
+        "watch": "webpack --mode development --watch",
+        "watch-webview": "vite build --config vite.webview.config.ts --watch",
+        "dev-webview": "vite dev --config vite.webview.config.ts",
+        "package": "vsce package",
+        "test": "npm run compile && node ./out/test/runTest.js"
+    },
+    "devDependencies": {
+        "@types/node": "18.x",
+        "@types/react": "^19.1.13",
+        "@types/react-dom": "^19.1.9",
+        "@types/vscode": "^1.84.0",
+        "@vitejs/plugin-react": "^5.0.3",
+        "rimraf": "^5.0.5",
+        "ts-loader": "^9.5.4",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.3.3",
+        "vite": "^7.1.6",
+        "webpack": "^5.101.3",
+        "webpack-cli": "^6.0.1"
+    },
+    "dependencies": {
+        "@emotion/react": "^11.14.0",
+        "@emotion/styled": "^11.14.1",
+        "@mui/icons-material": "^7.3.2",
+        "@mui/material": "^7.3.2",
+        "@octokit/auth-oauth-device": "^4.0.3",
+        "@octokit/rest": "^20.0.2",
+        "@tanstack/react-query": "^5.89.0",
+        "axios": "^1.12.2",
+        "react": "^19.1.0",
+        "react-dom": "^19.1.0",
+        "simple-git": "^3.21.0"
+    }
 }
