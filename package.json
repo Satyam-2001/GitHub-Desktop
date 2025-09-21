@@ -2,7 +2,7 @@
     "name": "vscode-github-desktop",
     "displayName": "GitHub Desktop",
     "description": "A comprehensive VS Code extension that brings GitHub Desktop's complete workflow experience, featuring React-based UI, advanced commit management, branch operations, and multi-account support.",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "publisher": "BetaVersion",
     "icon": "media/icon.png",
     "repository": {
@@ -43,8 +43,18 @@
                 "category": "GitHub Desktop"
             },
             {
+                "command": "githubDesktop.signOutAccount",
+                "title": "Sign Out",
+                "category": "GitHub Desktop"
+            },
+            {
                 "command": "githubDesktop.switchAccount",
                 "title": "GitHub Desktop: Switch Active Account",
+                "category": "GitHub Desktop"
+            },
+            {
+                "command": "githubDesktop.switchToAccount",
+                "title": "GitHub Desktop: Switch to Account",
                 "category": "GitHub Desktop"
             },
             {
@@ -96,6 +106,18 @@
                     "name": "Repositories",
                     "icon": "$(repo)",
                     "collapsed": true
+                }
+            ]
+        },
+        "menus": {
+            "view/item/context": [
+                {
+                    "command": "githubDesktop.signOutAccount",
+                    "when": "view == githubDesktop.accounts && viewItem == githubDesktop.account"
+                },
+                {
+                    "command": "githubDesktop.signOutAccount",
+                    "when": "view == githubDesktop.accounts && viewItem == githubDesktop.activeAccount"
                 }
             ]
         }

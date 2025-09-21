@@ -1,13 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { Box, Typography, Popover } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Popover,
+  MenuList,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+} from "@mui/material";
 import {
   CallSplit as BranchIcon,
   KeyboardArrowDown as DropdownIcon,
   ArrowDownward as PullIcon,
+  CloudUpload as PublishIcon,
+  CloudDownload as FetchIcon,
+  ArrowUpward as PushIcon,
+  FlashOn as ForceIcon,
 } from "@mui/icons-material";
 import { BranchDropdown } from "../BranchDropdown";
-import { SyncButton } from "../SyncButton";
 import { VSCodeBridge, RemoteStatus } from "../../../bridge";
+import { useGitOperations } from "../../../hooks/useGitOperations";
 
 interface TimelineHeaderProps {
   currentBranch: string | null;
@@ -30,6 +42,7 @@ export const TimelineHeader: React.FC<TimelineHeaderProps> = ({
 }) => {
   const [syncAnchorEl, setSyncAnchorEl] = useState<HTMLElement | null>(null);
   const [lastFetchedText, setLastFetchedText] = useState("");
+  const gitOps = useGitOperations(bridge);
 
   const syncOpen = Boolean(syncAnchorEl);
 
@@ -71,11 +84,67 @@ export const TimelineHeader: React.FC<TimelineHeaderProps> = ({
   }, [remoteStatus]);
 
   const handleSyncClick = (event: React.MouseEvent<HTMLElement>) => {
+    // Perform sync action based on remote status
+    if (!remoteStatus) return;
+
+    if (!remoteStatus.isPublished) {
+      gitOps.publish.mutate();
+    } else if (remoteStatus.behind > 0 && remoteStatus.ahead > 0) {
+      gitOps.pull.mutate();
+    } else if (remoteStatus.behind > 0) {
+      gitOps.pull.mutate();
+    } else if (remoteStatus.ahead > 0) {
+      gitOps.push.mutate();
+    } else {
+      gitOps.fetch.mutate();
+    }
+  };
+
+  const handleSyncDropdownClick = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
     setSyncAnchorEl(event.currentTarget);
   };
 
   const handleSyncClose = () => {
     setSyncAnchorEl(null);
+  };
+
+  const getSyncStatus = () => {
+    if (!remoteStatus)
+      return { title: "Sync", icon: FetchIcon, showCounts: false };
+
+    if (!remoteStatus.isPublished) {
+      return { title: "Publish branch", icon: PublishIcon, showCounts: false };
+    } else if (remoteStatus.behind > 0 && remoteStatus.ahead > 0) {
+      return { title: "Pull origin", icon: PullIcon, showCounts: true };
+    } else if (remoteStatus.behind > 0) {
+      return { title: "Pull origin", icon: PullIcon, showCounts: true };
+    } else if (remoteStatus.ahead > 0) {
+      return { title: "Push origin", icon: PushIcon, showCounts: true };
+    } else {
+      return { title: "Fetch origin", icon: FetchIcon, showCounts: false };
+    }
+  };
+
+  const syncStatus = getSyncStatus();
+  const isLoading =
+    gitOps.push.isLoading ||
+    gitOps.pull.isLoading ||
+    gitOps.fetch.isLoading ||
+    gitOps.publish.isLoading;
+
+  // Show dropdown only when there are remote changes or commits to push
+  const shouldShowDropdown =
+    remoteStatus && (remoteStatus.behind > 0 || remoteStatus.ahead > 0);
+
+  const handleFetch = () => {
+    gitOps.fetch.mutate();
+    handleSyncClose();
+  };
+
+  const handleForcePush = () => {
+    bridge.sendMessage("forcePush");
+    handleSyncClose();
   };
 
   return (
@@ -101,7 +170,7 @@ export const TimelineHeader: React.FC<TimelineHeaderProps> = ({
           />
         </Box>
 
-        {/* Pull Origin Section */}
+        {/* Sync Section */}
         <Box
           onClick={handleSyncClick}
           sx={{
@@ -115,9 +184,10 @@ export const TimelineHeader: React.FC<TimelineHeaderProps> = ({
             borderRadius: "3px",
             px: 1,
             py: 0.5,
+            opacity: isLoading ? 0.6 : 1,
           }}
         >
-          <PullIcon
+          <syncStatus.icon
             sx={{
               fontSize: 16,
               color: "var(--vscode-descriptionForeground)",
@@ -133,7 +203,7 @@ export const TimelineHeader: React.FC<TimelineHeaderProps> = ({
                 lineHeight: 1.2,
               }}
             >
-              Pull origin
+              {syncStatus.title}
             </Typography>
             <Typography
               sx={{
@@ -147,7 +217,7 @@ export const TimelineHeader: React.FC<TimelineHeaderProps> = ({
           </Box>
 
           {/* Sync Counters */}
-          {remoteStatus && (
+          {remoteStatus && syncStatus.showCounts && (
             <Box
               sx={{
                 display: "flex",
@@ -206,14 +276,31 @@ export const TimelineHeader: React.FC<TimelineHeaderProps> = ({
             </Box>
           )}
 
-          <DropdownIcon
-            sx={{
-              fontSize: 16,
-              color: "var(--vscode-descriptionForeground)",
-              transform: syncOpen ? "rotate(180deg)" : "rotate(0deg)",
-              transition: "transform 0.2s ease",
-            }}
-          />
+          {shouldShowDropdown && (
+            <Box
+              onClick={handleSyncDropdownClick}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                p: 0.5,
+                borderRadius: "2px",
+                cursor: "pointer",
+                "&:hover": {
+                  bgcolor: "var(--vscode-toolbar-hoverBackground)",
+                },
+              }}
+            >
+              <DropdownIcon
+                sx={{
+                  fontSize: 16,
+                  color: "var(--vscode-descriptionForeground)",
+                  transform: syncOpen ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: "transform 0.2s ease",
+                }}
+              />
+            </Box>
+          )}
         </Box>
       </Box>
 
@@ -230,19 +317,78 @@ export const TimelineHeader: React.FC<TimelineHeaderProps> = ({
           vertical: "top",
           horizontal: "right",
         }}
-        PaperProps={{
-          sx: {
-            bgcolor: "var(--vscode-sideBar-background)",
-            border: "1px solid var(--vscode-sideBarSectionHeader-border)",
-            borderRadius: 1,
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4)",
-            p: 2,
+        slotProps={{
+          paper: {
+            elevation: 0,
+            sx: {
+              bgcolor: "var(--vscode-sideBar-background)",
+              border: "1px solid var(--vscode-sideBarSectionHeader-border)",
+              borderRadius: 1,
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4)",
+              minWidth: 200,
+            },
           },
         }}
       >
-        {remoteStatus && (
-          <SyncButton remoteStatus={remoteStatus} bridge={bridge} />
-        )}
+        <MenuList sx={{ py: 1 }}>
+          <MenuItem
+            onClick={handleFetch}
+            sx={{
+              py: 1,
+              px: 2,
+              color: "var(--vscode-foreground)",
+              "&:hover": {
+                bgcolor: "var(--vscode-list-hoverBackground)",
+              },
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 36 }}>
+              <FetchIcon
+                sx={{
+                  fontSize: 16,
+                  color: "var(--vscode-descriptionForeground)",
+                }}
+              />
+            </ListItemIcon>
+            <ListItemText
+              primary="Fetch Origin"
+              primaryTypographyProps={{
+                fontSize: "13px",
+                color: "var(--vscode-foreground)",
+              }}
+            />
+          </MenuItem>
+
+          {remoteStatus && remoteStatus.ahead > 0 && (
+            <MenuItem
+              onClick={handleForcePush}
+              sx={{
+                py: 1,
+                px: 2,
+                color: "var(--vscode-foreground)",
+                "&:hover": {
+                  bgcolor: "var(--vscode-list-hoverBackground)",
+                },
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                <ForceIcon
+                  sx={{
+                    fontSize: 16,
+                    color: "var(--vscode-descriptionForeground)",
+                  }}
+                />
+              </ListItemIcon>
+              <ListItemText
+                primary="Force Push"
+                primaryTypographyProps={{
+                  fontSize: "13px",
+                  color: "var(--vscode-foreground)",
+                }}
+              />
+            </MenuItem>
+          )}
+        </MenuList>
       </Popover>
     </>
   );

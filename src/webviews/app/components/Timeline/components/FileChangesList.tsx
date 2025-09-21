@@ -1,18 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
-  Button,
+  IconButton,
   List,
   ListItem,
   ListItemText,
   ListItemIcon,
-  Checkbox,
-  Chip,
+  Collapse,
 } from '@mui/material';
-import { Add as AddIcon, Remove as RemoveIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Remove as RemoveIcon,
+  KeyboardArrowDown as ArrowDownIcon,
+  KeyboardArrowRight as ArrowRightIcon,
+  InsertDriveFile as FileIcon,
+} from '@mui/icons-material';
 import { GitChange } from '../../../bridge';
-import { getStatusColor } from '../utils/timeline.utils';
 
 interface FileChangesListProps {
   title: string;
@@ -24,6 +28,28 @@ interface FileChangesListProps {
   actionIcon?: React.ReactNode;
 }
 
+const getStatusIndicator = (status: string) => {
+  switch (status.toUpperCase()) {
+    case 'M':
+    case 'MODIFIED':
+      return { label: 'M', color: '#569cd6' }; // Blue
+    case 'A':
+    case 'ADDED':
+      return { label: 'A', color: '#4fc1ff' }; // Light blue
+    case 'D':
+    case 'DELETED':
+      return { label: 'D', color: '#f85149' }; // Red
+    case 'R':
+    case 'RENAMED':
+      return { label: 'R', color: '#a5a5a5' }; // Gray
+    case 'U':
+    case 'UNTRACKED':
+      return { label: 'U', color: '#73c991' }; // Green
+    default:
+      return { label: '?', color: '#a5a5a5' };
+  }
+};
+
 export const FileChangesList: React.FC<FileChangesListProps> = ({
   title,
   changes,
@@ -33,95 +59,155 @@ export const FileChangesList: React.FC<FileChangesListProps> = ({
   actionLabel,
   actionIcon,
 }) => {
+  const [collapsed, setCollapsed] = useState(false);
+
   if (changes.length === 0) return null;
+
+  const getFileName = (path: string) => {
+    return path.split('/').pop() || path;
+  };
+
+  const getFileDirectory = (path: string) => {
+    const parts = path.split('/');
+    return parts.length > 1 ? parts.slice(0, -1).join('/') : '';
+  };
 
   return (
     <Box>
+      {/* Section Header */}
       <Box sx={{
-        px: 2,
-        py: 1.5,
-        pb: 1,
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
+        px: 1,
+        py: 0.5,
+        bgcolor: 'var(--vscode-sideBarSectionHeader-background)',
+        borderBottom: '1px solid var(--vscode-sideBarSectionHeader-border)',
+        cursor: 'pointer'
+      }}
+      onClick={() => setCollapsed(!collapsed)}
+      >
+        <IconButton
+          size="small"
+          sx={{
+            p: 0,
+            mr: 0.5,
+            color: 'var(--vscode-sideBarSectionHeader-foreground)'
+          }}
+        >
+          {collapsed ? <ArrowRightIcon sx={{ fontSize: 16 }} /> : <ArrowDownIcon sx={{ fontSize: 16 }} />}
+        </IconButton>
+
         <Typography sx={{
-          fontSize: '13px',
+          fontSize: '11px',
           fontWeight: 600,
-          color: 'var(--vscode-foreground)'
+          color: 'var(--vscode-sideBarSectionHeader-foreground)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.5px',
+          flex: 1
         }}>
-          {title} ({changes.length})
+          {title}
         </Typography>
-        {selectedFiles.size > 0 && onActionClick && actionLabel && (
-          <Button
-            onClick={onActionClick}
+
+        <Typography sx={{
+          fontSize: '11px',
+          color: 'var(--vscode-sideBarSectionHeader-foreground)',
+          mr: 1
+        }}>
+          {changes.length}
+        </Typography>
+
+        {onActionClick && actionLabel && (
+          <IconButton
+            onClick={(e) => {
+              e.stopPropagation();
+              onActionClick();
+            }}
             size="small"
-            startIcon={actionIcon}
             sx={{
-              fontSize: '11px',
-              textTransform: 'none',
-              color: 'var(--vscode-foreground)',
-              minHeight: 'auto',
-              py: 0.5
+              p: 0.25,
+              color: 'var(--vscode-sideBarSectionHeader-foreground)',
+              '&:hover': {
+                bgcolor: 'var(--vscode-toolbar-hoverBackground)'
+              }
             }}
           >
-            {actionLabel}
-          </Button>
+            {actionIcon}
+          </IconButton>
         )}
       </Box>
-      <List sx={{ py: 0 }}>
-        {changes.map((change) => (
-          <ListItem
-            key={change.path}
-            sx={{
-              py: 0.75,
-              px: 0,
-              cursor: 'pointer',
-              '&:hover': {
-                bgcolor: 'var(--vscode-list-hoverBackground)'
-              }
-            }}
-            onClick={() => onFileToggle(change.path)}
-          >
-            <ListItemIcon sx={{ minWidth: 24, ml: 2 }}>
-              <Checkbox
-                checked={selectedFiles.has(change.path)}
-                size="small"
+
+      {/* File List */}
+      <Collapse in={!collapsed}>
+        <List sx={{ py: 0 }}>
+          {changes.map((change) => {
+            const status = getStatusIndicator(change.status);
+            const fileName = getFileName(change.path);
+            const directory = getFileDirectory(change.path);
+
+            return (
+              <ListItem
+                key={change.path}
                 sx={{
-                  color: 'var(--vscode-checkbox-border)',
-                  '&.Mui-checked': {
-                    color: 'var(--vscode-checkbox-background)'
+                  py: 0.25,
+                  px: 1,
+                  cursor: 'pointer',
+                  minHeight: 22,
+                  '&:hover': {
+                    bgcolor: 'var(--vscode-list-hoverBackground)'
+                  },
+                  '&:focus': {
+                    bgcolor: 'var(--vscode-list-focusBackground)',
+                    outline: 'none'
                   }
                 }}
-              />
-            </ListItemIcon>
-            <ListItemText
-              primary={
-                <Typography sx={{
-                  fontSize: '13px',
-                  color: 'var(--vscode-foreground)'
-                }}>
-                  {change.path}
-                </Typography>
-              }
-              secondary={
-                <Chip
-                  label={change.status}
-                  size="small"
-                  sx={{
-                    height: 18,
-                    fontSize: '10px',
-                    fontWeight: 500,
-                    bgcolor: getStatusColor(change.status),
-                    color: 'white',
-                    mt: 0.5
-                  }}
+                onClick={() => onFileToggle(change.path)}
+              >
+                <ListItemIcon sx={{ minWidth: 20, mr: 0.5 }}>
+                  <FileIcon sx={{
+                    fontSize: 16,
+                    color: 'var(--vscode-icon-foreground)'
+                  }} />
+                </ListItemIcon>
+
+                <ListItemText
+                  primary={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Typography sx={{
+                        fontSize: '13px',
+                        color: 'var(--vscode-foreground)',
+                        lineHeight: 1
+                      }}>
+                        {fileName}
+                      </Typography>
+                      {directory && (
+                        <Typography sx={{
+                          fontSize: '11px',
+                          color: 'var(--vscode-descriptionForeground)',
+                          lineHeight: 1
+                        }}>
+                          {directory}
+                        </Typography>
+                      )}
+                    </Box>
+                  }
+                  sx={{ my: 0 }}
                 />
-              }
-            />
-          </ListItem>
-        ))}
-      </List>
+
+                <Typography sx={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: status.color,
+                  minWidth: 12,
+                  textAlign: 'center',
+                  lineHeight: 1
+                }}>
+                  {status.label}
+                </Typography>
+              </ListItem>
+            );
+          })}
+        </List>
+      </Collapse>
     </Box>
   );
 };

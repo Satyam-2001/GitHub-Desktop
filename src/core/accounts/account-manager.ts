@@ -64,10 +64,64 @@ export class AccountManager {
   }
 
   async signIn(): Promise<StoredAccount | undefined> {
-    const cliCredential = await this.tryGetGitHubCliCredential();
-    let token: string | undefined = cliCredential?.token;
+    // Check if GitHub CLI is available
+    const cliInfo = await this.getGitHubCliInfo();
 
-    if (!token) {
+    // Provide sign-in options
+    const signInMethod = await vscode.window.showQuickPick(
+      [
+        ...(cliInfo ? [{
+          label: '$(github) Use GitHub CLI',
+          description: cliInfo.multipleAccounts
+            ? `${cliInfo.accountCount} accounts available`
+            : `Signed in as ${cliInfo.currentUser}`,
+          value: 'cli'
+        }] : []),
+        {
+          label: '$(key) Enter Personal Access Token',
+          description: 'Manually enter a GitHub PAT',
+          value: 'token'
+        },
+        ...(cliInfo?.multipleAccounts ? [{
+          label: '$(terminal) Switch GitHub CLI Account',
+          description: 'Switch to a different GitHub CLI account first',
+          value: 'switch-cli'
+        }] : [])
+      ],
+      {
+        placeHolder: 'Choose how to sign in to GitHub',
+        ignoreFocusOut: true
+      }
+    );
+
+    if (!signInMethod) {
+      return undefined;
+    }
+
+    let token: string | undefined;
+    let source: string | undefined;
+
+    if (signInMethod.value === 'switch-cli') {
+      // Guide user to switch GitHub CLI account
+      const terminal = vscode.window.createTerminal('GitHub CLI');
+      terminal.show();
+      terminal.sendText('gh auth status');
+      terminal.sendText('# To switch accounts, use: gh auth switch');
+
+      vscode.window.showInformationMessage(
+        'Switch your GitHub CLI account in the terminal, then try adding the account again.',
+        'OK'
+      );
+      return undefined;
+    } else if (signInMethod.value === 'cli') {
+      // Use current GitHub CLI token
+      const cliToken = await this.getGitHubCliToken();
+      if (cliToken) {
+        token = cliToken.token;
+        source = cliToken.source;
+      }
+    } else {
+      // Manual token entry
       token = await vscode.window.showInputBox({
         prompt: 'Enter a GitHub Personal Access Token with repo and workflow scopes',
         placeHolder: 'ghp_xxx...',
@@ -78,6 +132,11 @@ export class AccountManager {
         vscode.window.showInformationMessage('GitHub Desktop sign-in cancelled.');
         return undefined;
       }
+    }
+
+    if (!token) {
+      vscode.window.showErrorMessage('Failed to obtain authentication token.');
+      return undefined;
     }
 
     const octokit = new Octokit({ auth: token });
@@ -107,8 +166,8 @@ export class AccountManager {
       await this.globalState.update(ACTIVE_ACCOUNT_KEY, this.activeAccountId);
       this._onDidChangeAccounts.fire();
 
-      if (cliCredential?.source) {
-        vscode.window.showInformationMessage(`Signed in as ${account.login} using ${cliCredential.source}.`);
+      if (source) {
+        vscode.window.showInformationMessage(`Signed in as ${account.login} using ${source}.`);
       } else {
         vscode.window.showInformationMessage(`Signed in as ${account.login}.`);
       }
@@ -162,12 +221,25 @@ export class AccountManager {
       return undefined;
     }
 
-    this.activeAccountId = chosen.id;
+    return this.setActiveAccount(chosen.id);
+  }
+
+  async setActiveAccount(accountId: string): Promise<StoredAccount | undefined> {
+    const account = this.getAccountById(accountId);
+    if (!account) {
+      throw new Error('Account not found');
+    }
+
+    if (this.activeAccountId === accountId) {
+      return account;
+    }
+
+    this.activeAccountId = accountId;
     await this.globalState.update(ACTIVE_ACCOUNT_KEY, this.activeAccountId);
     this._onDidChangeAccounts.fire();
 
-    vscode.window.showInformationMessage(`Active account switched to ${chosen.login}.`);
-    return chosen;
+    vscode.window.showInformationMessage(`Active account switched to ${account.login}.`);
+    return account;
   }
 
   async getOctokit(accountId?: string): Promise<Octokit | undefined> {
@@ -216,7 +288,48 @@ export class AccountManager {
     return selection?.account;
   }
 
-  private async tryGetGitHubCliCredential(): Promise<{ token: string; source: string } | undefined> {
+  private async getGitHubCliInfo(): Promise<{ currentUser: string; multipleAccounts: boolean; accountCount: number } | undefined> {
+    try {
+      const { stdout: statusOutput } = await execFileAsync('gh', ['auth', 'status'], {
+        encoding: 'utf8'
+      });
+
+      // Parse accounts from the status output
+      const accountMatches = Array.from(statusOutput.matchAll(/Logged in to [^\s]+ as ([^\s]+)/gi));
+      const accounts = accountMatches.map(match => match[1]);
+
+      if (accounts.length === 0) {
+        return undefined;
+      }
+
+      // Get current active account
+      try {
+        const { stdout: tokenOutput } = await execFileAsync('gh', ['auth', 'token'], { encoding: 'utf8' });
+        const token = tokenOutput.trim();
+        if (token) {
+          const octokit = new Octokit({ auth: token });
+          const { data } = await octokit.rest.users.getAuthenticated();
+          return {
+            currentUser: data.login,
+            multipleAccounts: accounts.length > 1,
+            accountCount: accounts.length
+          };
+        }
+      } catch {
+        // Fallback to first account in list
+      }
+
+      return {
+        currentUser: accounts[0],
+        multipleAccounts: accounts.length > 1,
+        accountCount: accounts.length
+      };
+    } catch {
+      return undefined;
+    }
+  }
+
+  private async getGitHubCliToken(): Promise<{ token: string; source: string } | undefined> {
     try {
       const { stdout: tokenOutput } = await execFileAsync('gh', ['auth', 'token'], { encoding: 'utf8' });
       const token = tokenOutput.trim();
@@ -225,19 +338,15 @@ export class AccountManager {
       }
 
       try {
-        const { stdout: statusOutput } = await execFileAsync('gh', ['auth', 'status', '--hostname', 'github.com'], {
-          encoding: 'utf8'
-        });
-        const userMatch = statusOutput.match(/as\s+([^\s]+)/i);
-        if (userMatch) {
-          return { token, source: `GitHub CLI session for ${userMatch[1]}` };
-        }
+        const octokit = new Octokit({ auth: token });
+        const { data } = await octokit.rest.users.getAuthenticated();
+        return { token, source: `GitHub CLI session for ${data.login}` };
       } catch {
-        // ignored, still return token
+        return { token, source: 'GitHub CLI session' };
       }
-      return { token, source: 'GitHub CLI session' };
     } catch {
       return undefined;
     }
   }
+
 }

@@ -66,8 +66,15 @@ export async function activate(
     vscode.commands.registerCommand("githubDesktop.signOut", () =>
       accountManager.signOut()
     ),
+    vscode.commands.registerCommand("githubDesktop.signOutAccount", (item: any) => {
+      const accountId = item?.account?.id;
+      return accountManager.signOut(accountId);
+    }),
     vscode.commands.registerCommand("githubDesktop.switchAccount", () =>
       accountManager.switchAccount()
+    ),
+    vscode.commands.registerCommand("githubDesktop.switchToAccount", (accountId: string) =>
+      accountsProvider.switchToAccount(accountId)
     ),
     vscode.commands.registerCommand("githubDesktop.cloneRepository", () =>
       cloneRepository(accountManager, repositoryManager, timelineProvider)
