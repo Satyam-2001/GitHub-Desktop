@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -12,6 +12,7 @@ import {
   IconButton,
   Divider,
   Chip,
+  Avatar,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
@@ -22,6 +23,7 @@ import {
 } from '@mui/icons-material';
 import { VSCodeBridge, GitChange, GitCommit, Repository } from '../bridge';
 import { BranchDropdown } from './BranchDropdown';
+import { CommitDetailPanel } from './CommitDetailPanel';
 
 interface TimelineProps {
   changes: GitChange[];
@@ -45,6 +47,8 @@ export const Timeline: React.FC<TimelineProps> = ({
   const [activeTab, setActiveTab] = useState<'changes' | 'history'>('changes');
   const [commitMessage, setCommitMessage] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [selectedCommit, setSelectedCommit] = useState<any>(null);
+  const [showCommitDetail, setShowCommitDetail] = useState(false);
 
   const handleTabChange = (tab: 'changes' | 'history') => {
     setActiveTab(tab);
@@ -87,6 +91,37 @@ export const Timeline: React.FC<TimelineProps> = ({
 
   const handleRefresh = () => {
     bridge.sendMessage('refresh');
+  };
+
+  const handleCommitSelect = (commit: GitCommit) => {
+    bridge.sendMessage('getCommitDetails', { hash: commit.hash });
+  };
+
+  const handleCommitDetailReceived = (commitDetail: any) => {
+    setSelectedCommit(commitDetail);
+    setShowCommitDetail(true);
+  };
+
+  // Listen for commit details from bridge
+  useEffect(() => {
+    const handleMessage = (message: any) => {
+      if (message.command === 'commitDetails') {
+        handleCommitDetailReceived(message.commitDetail);
+      }
+    };
+
+    bridge.onMessage(handleMessage);
+  }, [bridge]);
+
+  const handleCloseCommitDetail = () => {
+    setShowCommitDetail(false);
+    setSelectedCommit(null);
+  };
+
+  const generateAvatarUrl = (email: string, name: string) => {
+    const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#6c5ce7', '#fd79a8'];
+    const colorIndex = email.charCodeAt(0) % colors.length;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${colors[colorIndex].slice(1)}&color=fff&size=32`;
   };
 
 
@@ -492,82 +527,114 @@ export const Timeline: React.FC<TimelineProps> = ({
         )}
 
         {activeTab === 'history' && (
-          <Box sx={{ flex: 1, overflow: 'auto' }}>
-            <List sx={{ py: 0 }}>
-              {history.map((commit) => (
-                <ListItem
-                  key={commit.hash}
-                  sx={{
-                    py: 1.5,
-                    px: 2,
-                    borderBottom: '1px solid var(--vscode-sideBarSectionHeader-border)',
-                    cursor: 'pointer',
-                    '&:hover': {
-                      bgcolor: 'var(--vscode-list-hoverBackground)'
-                    }
-                  }}
-                >
-                  <ListItemText
-                    primary={
-                      <Typography sx={{
-                        fontSize: '13px',
-                        fontWeight: 500,
-                        color: 'var(--vscode-foreground)',
-                        mb: 0.5
-                      }}>
-                        {commit.message}
-                      </Typography>
-                    }
-                    secondary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography sx={{
-                          fontSize: '12px',
-                          color: 'var(--vscode-descriptionForeground)'
-                        }}>
-                          {commit.author}
-                        </Typography>
-                        <Typography sx={{
-                          fontSize: '12px',
-                          color: 'var(--vscode-descriptionForeground)'
-                        }}>
-                          •
-                        </Typography>
-                        <Typography sx={{
-                          fontSize: '12px',
-                          color: 'var(--vscode-descriptionForeground)'
-                        }}>
-                          {commit.date}
-                        </Typography>
-                        <Typography sx={{
+          <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+            {/* Commit List */}
+            <Box sx={{
+              width: showCommitDetail ? '50%' : '100%',
+              borderRight: showCommitDetail ? '1px solid var(--vscode-sideBarSectionHeader-border)' : 'none',
+              overflow: 'auto'
+            }}>
+              <List sx={{ py: 0 }}>
+                {history.map((commit) => (
+                  <ListItem
+                    key={commit.hash}
+                    sx={{
+                      py: 1.5,
+                      px: 2,
+                      borderBottom: '1px solid var(--vscode-sideBarSectionHeader-border)',
+                      cursor: 'pointer',
+                      bgcolor: selectedCommit?.hash === commit.hash ? 'var(--vscode-list-activeSelectionBackground)' : 'transparent',
+                      '&:hover': {
+                        bgcolor: selectedCommit?.hash === commit.hash ? 'var(--vscode-list-activeSelectionBackground)' : 'var(--vscode-list-hoverBackground)'
+                      }
+                    }}
+                    onClick={() => handleCommitSelect(commit)}
+                  >
+                    <ListItemIcon sx={{ minWidth: 32, mr: 1 }}>
+                      <Avatar
+                        src={generateAvatarUrl(commit.email || '', commit.author)}
+                        sx={{
+                          width: 24,
+                          height: 24,
                           fontSize: '11px',
-                          fontFamily: 'monospace',
-                          color: 'var(--vscode-descriptionForeground)',
-                          ml: 'auto'
+                          bgcolor: 'var(--vscode-button-background)',
+                        }}
+                      >
+                        {commit.author.charAt(0).toUpperCase()}
+                      </Avatar>
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={
+                        <Typography sx={{
+                          fontSize: '13px',
+                          fontWeight: 500,
+                          color: selectedCommit?.hash === commit.hash ? 'var(--vscode-list-activeSelectionForeground)' : 'var(--vscode-foreground)',
+                          mb: 0.5,
+                          lineHeight: 1.3
                         }}>
-                          {commit.hash.substring(0, 7)}
+                          {commit.message}
                         </Typography>
-                      </Box>
-                    }
-                  />
-                </ListItem>
-              ))}
-            </List>
-            {history.length === 0 && (
-              <Box sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '200px',
-                color: 'var(--vscode-descriptionForeground)'
-              }}>
-                <Typography sx={{ fontSize: '14px', textAlign: 'center' }}>
-                  No commits yet
-                </Typography>
-                <Typography sx={{ fontSize: '12px', textAlign: 'center', mt: 1 }}>
-                  Create your first commit to see history
-                </Typography>
-              </Box>
+                      }
+                      secondary={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                          <Typography sx={{
+                            fontSize: '12px',
+                            color: 'var(--vscode-descriptionForeground)',
+                            fontWeight: 500
+                          }}>
+                            {commit.author}
+                          </Typography>
+                          <Typography sx={{
+                            fontSize: '12px',
+                            color: 'var(--vscode-descriptionForeground)'
+                          }}>
+                            •
+                          </Typography>
+                          <Typography sx={{
+                            fontSize: '12px',
+                            color: 'var(--vscode-descriptionForeground)'
+                          }}>
+                            {commit.date}
+                          </Typography>
+                          <Typography sx={{
+                            fontSize: '11px',
+                            fontFamily: 'monospace',
+                            color: 'var(--vscode-descriptionForeground)',
+                            ml: 'auto'
+                          }}>
+                            {commit.hash.substring(0, 7)}
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+              {history.length === 0 && (
+                <Box sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '200px',
+                  color: 'var(--vscode-descriptionForeground)'
+                }}>
+                  <Typography sx={{ fontSize: '14px', textAlign: 'center' }}>
+                    No commits yet
+                  </Typography>
+                  <Typography sx={{ fontSize: '12px', textAlign: 'center', mt: 1 }}>
+                    Create your first commit to see history
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+
+            {/* Commit Detail Panel */}
+            {showCommitDetail && (
+              <CommitDetailPanel
+                commit={selectedCommit}
+                onClose={handleCloseCommitDetail}
+              />
             )}
           </Box>
         )}

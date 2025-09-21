@@ -82,6 +82,9 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
         case 'createPullRequest':
           await this.createPullRequest(message.branch);
           break;
+        case 'getCommitDetails':
+          await this.getCommitDetails(message.hash);
+          break;
         case 'selectCommit':
           if (typeof message.hash === 'string') {
             await this.postCommitDetail(message.hash);
@@ -134,6 +137,7 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
         hash: commit.hash,
         message: commit.message,
         author: commit.author_name,
+        email: commit.author_email,
         date: this.formatRelativeTime(new Date(commit.date))
       }));
 
@@ -471,6 +475,90 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
       }
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to create pull request: ${error}`);
+    }
+  }
+
+  private async getCommitDetails(hash: string): Promise<void> {
+    const repository = getPrimaryRepository(this.repositories);
+    if (!repository || !hash) return;
+
+    try {
+      const git = simpleGit(repository.localPath);
+
+      // Get commit info
+      const commitInfo = await git.show([hash, '--name-status', '--format=%H%n%an%n%ae%n%ad%n%s%n%b']);
+      const lines = commitInfo.split('\n');
+
+      const fullHash = lines[0];
+      const author = lines[1];
+      const email = lines[2];
+      const date = lines[3];
+      const message = lines[4];
+
+      // Get file changes with statistics
+      const stats = await git.raw(['show', hash, '--numstat', '--format=']);
+      const statLines = stats.split('\n').filter(line => line.trim());
+
+      const files: Array<{
+        path: string;
+        status: string;
+        additions: number;
+        deletions: number;
+      }> = [];
+
+      let totalAdditions = 0;
+      let totalDeletions = 0;
+
+      // Get file status
+      const statusOutput = await git.raw(['show', hash, '--name-status', '--format=']);
+      const statusLines = statusOutput.split('\n').filter(line => line.trim());
+
+      const statusMap = new Map<string, string>();
+      for (const line of statusLines) {
+        const [status, filePath] = line.split('\t');
+        if (filePath) {
+          statusMap.set(filePath, status);
+        }
+      }
+
+      // Parse numstat output
+      for (const line of statLines) {
+        const [addStr, delStr, filePath] = line.split('\t');
+        if (!filePath) continue;
+
+        const additions = addStr === '-' ? 0 : parseInt(addStr, 10) || 0;
+        const deletions = delStr === '-' ? 0 : parseInt(delStr, 10) || 0;
+        const status = statusMap.get(filePath) || 'M';
+
+        files.push({
+          path: filePath,
+          status,
+          additions,
+          deletions
+        });
+
+        totalAdditions += additions;
+        totalDeletions += deletions;
+      }
+
+      const commitDetail = {
+        hash: fullHash,
+        message,
+        author,
+        email,
+        date: this.formatRelativeTime(new Date(date)),
+        files,
+        totalAdditions,
+        totalDeletions
+      };
+
+      this.view?.webview.postMessage({
+        command: 'commitDetails',
+        commitDetail
+      });
+
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to get commit details: ${error}`);
     }
   }
 
