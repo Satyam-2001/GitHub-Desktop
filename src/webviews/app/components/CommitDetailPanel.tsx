@@ -66,6 +66,75 @@ export const CommitDetailPanel: React.FC<CommitDetailPanelProps> = ({
     }
   };
 
+  const getFileIcon = (file: { path: string; iconClass?: string }) => {
+    // Get file extension
+    const ext = file.path.split('.').pop()?.toLowerCase() || '';
+
+    // Map common extensions to VS Code codicons
+    const iconMap: { [key: string]: string } = {
+      'ts': 'symbol-class',
+      'tsx': 'symbol-class',
+      'js': 'symbol-method',
+      'jsx': 'symbol-method',
+      'json': 'json',
+      'html': 'code',
+      'css': 'symbol-color',
+      'scss': 'symbol-color',
+      'md': 'markdown',
+      'yml': 'settings-gear',
+      'yaml': 'settings-gear',
+      'xml': 'code',
+      'svg': 'file-media',
+      'png': 'file-media',
+      'jpg': 'file-media',
+      'jpeg': 'file-media',
+      'gif': 'file-media',
+      'pdf': 'file-pdf',
+      'zip': 'file-zip',
+      'git': 'git-commit',
+      'lock': 'lock',
+      'env': 'gear',
+      'config': 'settings-gear',
+      'py': 'symbol-namespace',
+      'java': 'symbol-class',
+      'c': 'symbol-misc',
+      'cpp': 'symbol-misc',
+      'h': 'symbol-misc',
+      'go': 'symbol-method',
+      'rs': 'symbol-misc',
+      'vue': 'symbol-namespace',
+      'sql': 'database',
+      'sh': 'terminal',
+      'bash': 'terminal',
+      'ps1': 'terminal-powershell',
+      'dockerfile': 'file-binary',
+      'txt': 'file-text',
+      'log': 'output',
+    };
+
+    // Check for specific filenames
+    const filename = file.path.split('/').pop()?.toLowerCase() || '';
+    if (filename === 'package.json') return 'package';
+    if (filename === 'tsconfig.json') return 'settings-gear';
+    if (filename === '.gitignore') return 'git-commit';
+    if (filename === '.env') return 'gear';
+    if (filename === 'readme.md') return 'book';
+    if (filename.startsWith('.')) return 'gear';
+
+    const iconName = iconMap[ext] || 'file';
+
+    return (
+      <span
+        className={`codicon codicon-${iconName}`}
+        style={{
+          fontSize: '16px',
+          color: 'var(--vscode-foreground)',
+          marginRight: '4px'
+        }}
+      />
+    );
+  };
+
   const generateAvatarUrl = (email: string) => {
     // Generate a simple avatar URL - in real implementation you'd use GitHub API or Gravatar
     const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#6c5ce7', '#fd79a8'];
@@ -85,7 +154,6 @@ export const CommitDetailPanel: React.FC<CommitDetailPanelProps> = ({
     <Box
       sx={{
         width: '100%',
-        minHeight: '300px',
         bgcolor: 'var(--vscode-sideBar-background)',
         display: 'flex',
         flexDirection: 'column',
@@ -273,8 +341,8 @@ export const CommitDetailPanel: React.FC<CommitDetailPanelProps> = ({
                   }}
                   onClick={() => handleFileSelect(file.path)}
                 >
-              <ListItemIcon sx={{ minWidth: 20, mr: 1 }}>
-                {getStatusIcon(file.status)}
+              <ListItemIcon sx={{ minWidth: 28, mr: 1, display: 'flex', alignItems: 'center' }}>
+                {getFileIcon(file)}
               </ListItemIcon>
               <ListItemText
                 primary={
@@ -293,12 +361,22 @@ export const CommitDetailPanel: React.FC<CommitDetailPanelProps> = ({
                       <Chip
                         label={file.status}
                         size="small"
+                        icon={file.status.charAt(0) === 'A' ?
+                          <AddIcon sx={{ fontSize: 10 }} /> :
+                          file.status.charAt(0) === 'D' ?
+                          <RemoveIcon sx={{ fontSize: 10 }} /> : undefined
+                        }
                         sx={{
                           height: 18,
                           fontSize: '10px',
                           fontWeight: 500,
                           bgcolor: getStatusColor(file.status),
                           color: 'white',
+                          '& .MuiChip-icon': {
+                            color: 'white',
+                            fontSize: 10,
+                            ml: 0.5
+                          },
                         }}
                       />
                       {file.additions > 0 && (
