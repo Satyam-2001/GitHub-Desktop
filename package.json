@@ -110,7 +110,7 @@
         "watch": "webpack --mode development --watch",
         "watch-webview": "vite build --config vite.webview.config.ts --watch",
         "dev-webview": "vite dev --config vite.webview.config.ts",
-        "package": "vsce package",
+        "package": "vsce package --no-dependencies",
         "test": "npm run compile && node ./out/test/runTest.js"
     },
     "devDependencies": {
