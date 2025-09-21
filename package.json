@@ -13,8 +13,6 @@
         "vscode": ">=1.84.0"
     },
     "categories": [
-        "SCM",
-        "Source Control",
         "Other"
     ],
     "keywords": [
