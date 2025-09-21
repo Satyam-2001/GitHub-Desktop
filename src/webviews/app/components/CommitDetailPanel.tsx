@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -10,13 +10,16 @@ import {
   Chip,
   Divider,
   Avatar,
+  CircularProgress,
 } from '@mui/material';
 import {
   Close as CloseIcon,
   InsertDriveFile as FileIcon,
   Add as AddIcon,
   Remove as RemoveIcon,
+  ArrowBack as BackIcon,
 } from '@mui/icons-material';
+import { VSCodeBridge } from '../bridge';
 
 interface CommitDetail {
   hash: string;
@@ -38,12 +41,18 @@ interface CommitDetail {
 interface CommitDetailPanelProps {
   commit: CommitDetail | null;
   onClose: () => void;
+  bridge: VSCodeBridge;
 }
 
 export const CommitDetailPanel: React.FC<CommitDetailPanelProps> = ({
   commit,
   onClose,
+  bridge,
 }) => {
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [fileDiff, setFileDiff] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
   if (!commit) return null;
 
   const getStatusColor = (status: string) => {
@@ -71,6 +80,75 @@ export const CommitDetailPanel: React.FC<CommitDetailPanelProps> = ({
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(commit.author)}&background=${colors[colorIndex].slice(1)}&color=fff&size=32`;
   };
 
+  const handleFileSelect = async (filePath: string) => {
+    setSelectedFile(filePath);
+    setLoading(true);
+    setFileDiff(null);
+
+    // Request file diff from backend
+    bridge.sendMessage('getFileDiff', {
+      hash: commit.hash,
+      filePath
+    });
+  };
+
+  const handleBackToFileList = () => {
+    setSelectedFile(null);
+    setFileDiff(null);
+  };
+
+  // Listen for file diff response
+  React.useEffect(() => {
+    const handleMessage = (message: any) => {
+      if (message.command === 'fileDiff' && message.filePath === selectedFile) {
+        setFileDiff(message.diff);
+        setLoading(false);
+      }
+    };
+
+    bridge.onMessage(handleMessage);
+  }, [bridge, selectedFile]);
+
+  const renderDiffLine = (line: string, index: number) => {
+    let lineClass = '';
+    let backgroundColor = '';
+
+    if (line.startsWith('+')) {
+      lineClass = 'diff-addition';
+      backgroundColor = 'rgba(16, 185, 129, 0.1)';
+    } else if (line.startsWith('-')) {
+      lineClass = 'diff-deletion';
+      backgroundColor = 'rgba(239, 68, 68, 0.1)';
+    } else if (line.startsWith('@@')) {
+      lineClass = 'diff-hunk';
+      backgroundColor = 'rgba(59, 130, 246, 0.1)';
+    }
+
+    return (
+      <Box
+        key={index}
+        sx={{
+          fontFamily: 'monospace',
+          fontSize: '12px',
+          lineHeight: 1.4,
+          whiteSpace: 'pre',
+          px: 1,
+          py: 0.25,
+          backgroundColor,
+          borderLeft: line.startsWith('+') ? '3px solid #10b981' :
+                     line.startsWith('-') ? '3px solid #ef4444' :
+                     'none',
+          color: line.startsWith('+') ? '#10b981' :
+                 line.startsWith('-') ? '#ef4444' :
+                 line.startsWith('@@') ? '#3b82f6' :
+                 'var(--vscode-foreground)',
+        }}
+      >
+        {line || ' '}
+      </Box>
+    );
+  };
+
   return (
     <Box
       sx={{
@@ -92,15 +170,31 @@ export const CommitDetailPanel: React.FC<CommitDetailPanelProps> = ({
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          <Typography
-            sx={{
-              fontSize: '16px',
-              fontWeight: 600,
-              color: 'var(--vscode-foreground)',
-            }}
-          >
-            Commit Details
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {selectedFile && (
+              <IconButton
+                onClick={handleBackToFileList}
+                size="small"
+                sx={{
+                  color: 'var(--vscode-foreground)',
+                  '&:hover': {
+                    bgcolor: 'var(--vscode-list-hoverBackground)',
+                  },
+                }}
+              >
+                <BackIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+            )}
+            <Typography
+              sx={{
+                fontSize: '16px',
+                fontWeight: 600,
+                color: 'var(--vscode-foreground)',
+              }}
+            >
+              {selectedFile ? selectedFile : 'Commit Details'}
+            </Typography>
+          </Box>
           <IconButton
             onClick={onClose}
             size="small"
@@ -115,18 +209,20 @@ export const CommitDetailPanel: React.FC<CommitDetailPanelProps> = ({
           </IconButton>
         </Box>
 
-        {/* Commit Info */}
-        <Typography
-          sx={{
-            fontSize: '14px',
-            fontWeight: 500,
-            color: 'var(--vscode-foreground)',
-            mb: 1,
-            lineHeight: 1.4,
-          }}
-        >
-          {commit.message}
-        </Typography>
+        {/* Commit Info - Only show when not viewing a file */}
+        {!selectedFile && (
+          <>
+            <Typography
+              sx={{
+                fontSize: '14px',
+                fontWeight: 500,
+                color: 'var(--vscode-foreground)',
+                mb: 1,
+                lineHeight: 1.4,
+              }}
+            >
+              {commit.message}
+            </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
           <Avatar
@@ -209,9 +305,11 @@ export const CommitDetailPanel: React.FC<CommitDetailPanelProps> = ({
             {commit.files.length} files
           </Typography>
         </Box>
+          </>
+        )}
       </Box>
 
-      {/* Files List */}
+      {/* Content Area */}
       <Box
         sx={{
           flex: 1,
@@ -231,37 +329,41 @@ export const CommitDetailPanel: React.FC<CommitDetailPanelProps> = ({
           },
         }}
       >
-        <Typography
-          sx={{
-            px: 2,
-            py: 1,
-            fontSize: '13px',
-            fontWeight: 600,
-            color: 'var(--vscode-foreground)',
-            bgcolor: 'var(--vscode-sideBar-background)',
-            borderBottom: '1px solid var(--vscode-sideBarSectionHeader-border)',
-          }}
-        >
-          Changed Files ({commit.files.length})
-        </Typography>
-
-        <List sx={{ py: 0 }}>
-          {commit.files.map((file, index) => (
-            <ListItem
-              key={index}
+        {!selectedFile ? (
+          <>
+            {/* Files List */}
+            <Typography
               sx={{
-                py: 1,
                 px: 2,
-                cursor: 'pointer',
+                py: 1,
+                fontSize: '13px',
+                fontWeight: 600,
+                color: 'var(--vscode-foreground)',
+                bgcolor: 'var(--vscode-sideBar-background)',
                 borderBottom: '1px solid var(--vscode-sideBarSectionHeader-border)',
-                '&:hover': {
-                  bgcolor: 'var(--vscode-list-hoverBackground)',
-                },
-                '&:last-child': {
-                  borderBottom: 'none',
-                },
               }}
             >
+              Changed Files ({commit.files.length})
+            </Typography>
+
+            <List sx={{ py: 0 }}>
+              {commit.files.map((file, index) => (
+                <ListItem
+                  key={index}
+                  sx={{
+                    py: 1,
+                    px: 2,
+                    cursor: 'pointer',
+                    borderBottom: '1px solid var(--vscode-sideBarSectionHeader-border)',
+                    '&:hover': {
+                      bgcolor: 'var(--vscode-list-hoverBackground)',
+                    },
+                    '&:last-child': {
+                      borderBottom: 'none',
+                    },
+                  }}
+                  onClick={() => handleFileSelect(file.path)}
+                >
               <ListItemIcon sx={{ minWidth: 20, mr: 1 }}>
                 {getStatusIcon(file.status)}
               </ListItemIcon>
@@ -331,6 +433,52 @@ export const CommitDetailPanel: React.FC<CommitDetailPanelProps> = ({
             }}
           >
             <Typography sx={{ fontSize: '13px' }}>No files changed</Typography>
+          </Box>
+        )}
+          </>
+        ) : (
+          /* File Diff View */
+          <Box sx={{ height: '100%' }}>
+            {loading ? (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: 200,
+                  gap: 2,
+                }}
+              >
+                <CircularProgress size={20} />
+                <Typography sx={{ fontSize: '13px', color: 'var(--vscode-descriptionForeground)' }}>
+                  Loading diff...
+                </Typography>
+              </Box>
+            ) : fileDiff ? (
+              <Box
+                sx={{
+                  bgcolor: 'var(--vscode-editor-background)',
+                  border: '1px solid var(--vscode-sideBarSectionHeader-border)',
+                  borderRadius: 1,
+                  overflow: 'auto',
+                  height: '100%',
+                }}
+              >
+                {fileDiff.split('\n').map((line, index) => renderDiffLine(line, index))}
+              </Box>
+            ) : (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: 200,
+                  color: 'var(--vscode-descriptionForeground)',
+                }}
+              >
+                <Typography sx={{ fontSize: '13px' }}>No diff available</Typography>
+              </Box>
+            )}
           </Box>
         )}
       </Box>

@@ -634,6 +634,7 @@ export const Timeline: React.FC<TimelineProps> = ({
               <CommitDetailPanel
                 commit={selectedCommit}
                 onClose={handleCloseCommitDetail}
+                bridge={bridge}
               />
             )}
           </Box>

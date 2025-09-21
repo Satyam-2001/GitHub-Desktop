@@ -85,6 +85,9 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
         case 'getCommitDetails':
           await this.getCommitDetails(message.hash);
           break;
+        case 'getFileDiff':
+          await this.getFileDiff(message.hash, message.filePath);
+          break;
         case 'selectCommit':
           if (typeof message.hash === 'string') {
             await this.postCommitDetail(message.hash);
@@ -559,6 +562,34 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
 
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to get commit details: ${error}`);
+    }
+  }
+
+  private async getFileDiff(hash: string, filePath: string): Promise<void> {
+    const repository = getPrimaryRepository(this.repositories);
+    if (!repository || !hash || !filePath) return;
+
+    try {
+      const git = simpleGit(repository.localPath);
+
+      // Get the diff for the specific file
+      const diff = await git.raw(['show', hash, '--', filePath]);
+
+      this.view?.webview.postMessage({
+        command: 'fileDiff',
+        filePath,
+        diff
+      });
+
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to get file diff: ${error}`);
+
+      // Send empty diff on error
+      this.view?.webview.postMessage({
+        command: 'fileDiff',
+        filePath,
+        diff: `Error loading diff for ${filePath}: ${error}`
+      });
     }
   }
 
