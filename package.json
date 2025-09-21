@@ -2,7 +2,7 @@
     "name": "vscode-github-desktop",
     "displayName": "GitHub Desktop",
     "description": "A comprehensive VS Code extension that brings GitHub Desktop's complete workflow experience, featuring React-based UI, advanced commit management, branch operations, and multi-account support.",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "publisher": "BetaVersion",
     "icon": "media/icon.png",
     "repository": {
@@ -73,7 +73,7 @@
                 {
                     "id": "githubDesktop",
                     "title": "GitHub Desktop",
-                    "icon": "media/github-desktop-icon.svg"
+                    "icon": "media/icon.svg"
                 }
             ]
         },

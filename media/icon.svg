@@ -1,28 +1,19 @@
-<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background circle -->
-  <circle cx="64" cy="64" r="60" fill="#24292f" stroke="#58a6ff" stroke-width="4"/>
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- GitHub Octocat outline -->
+  <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.268 2.75 1.026A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.026 2.747-1.026.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"/>
 
-  <!-- GitHub Octocat -->
-  <path d="M64 20c-24.3 0-44 19.7-44 44 0 19.4 12.6 35.9 30.1 41.7 2.2.4 3-.9 3-2.1 0-1 0-3.7-.1-7.3-12.2 2.7-14.8-5.9-14.8-5.9-2-5.1-4.9-6.4-4.9-6.4-4-2.7.3-2.7.3-2.7 4.4.3 6.7 4.5 6.7 4.5 3.9 6.7 10.2 4.8 12.7 3.6.4-2.8 1.5-4.8 2.8-5.9-9.7-1.1-19.9-4.8-19.9-21.6 0-4.8 1.7-8.7 4.5-11.8-.5-1.1-1.9-5.6.4-11.6 0 0 3.7-1.2 12.1 4.5 3.5-1 7.3-1.4 11.1-1.4s7.6.5 11.1 1.4c8.4-5.7 12.1-4.5 12.1-4.5 2.4 6 1 10.5.5 11.6 2.8 3.1 4.5 7 4.5 11.8 0 16.9-10.3 20.5-20.1 21.6 1.6 1.4 3 4.1 3 8.3 0 6 0 10.8 0 12.3 0 1.2 1 2.6 3.1 2.1C95.4 99.9 108 83.4 108 64c0-24.3-19.7-44-44-44z" fill="#58a6ff"/>
-
-  <!-- Desktop monitor overlay -->
-  <g transform="translate(80, 85)">
-    <!-- Monitor screen -->
-    <rect x="0" y="0" width="32" height="22" rx="2" fill="#1f2328" stroke="#58a6ff" stroke-width="2"/>
+  <!-- Desktop/Code editor overlay - simple rectangular outline -->
+  <g opacity="0.8">
+    <!-- Monitor outline -->
+    <rect x="16" y="16" width="6" height="4" rx="0.5" fill="none" stroke="currentColor" stroke-width="0.8"/>
     <!-- Monitor stand -->
-    <rect x="12" y="20" width="8" height="6" fill="#58a6ff"/>
-    <rect x="6" y="24" width="20" height="2" fill="#58a6ff"/>
-    <!-- Screen content -->
-    <rect x="4" y="4" width="10" height="1.5" fill="#58a6ff" opacity="0.7"/>
-    <rect x="4" y="7" width="14" height="1.5" fill="#58a6ff" opacity="0.5"/>
-    <rect x="4" y="10" width="8" height="1.5" fill="#58a6ff" opacity="0.7"/>
-    <rect x="4" y="13" width="12" height="1.5" fill="#58a6ff" opacity="0.5"/>
-    <rect x="4" y="16" width="6" height="1.5" fill="#58a6ff" opacity="0.7"/>
-  </g>
-
-  <!-- VS Code style accent -->
-  <g transform="translate(10, 10)">
-    <rect x="0" y="0" width="18" height="18" rx="2" fill="#007acc" opacity="0.9"/>
-    <path d="M12 4L6 10L12 16L10 18L4 12V8L10 2L12 4Z" fill="white"/>
+    <line x1="18.5" y1="20" x2="18.5" y2="21.5" stroke="currentColor" stroke-width="0.8"/>
+    <line x1="17" y1="21.5" x2="20" y2="21.5" stroke="currentColor" stroke-width="0.8"/>
+    <!-- Screen content dots -->
+    <circle cx="17.5" cy="17.5" r="0.3" fill="currentColor"/>
+    <circle cx="19" cy="17.5" r="0.3" fill="currentColor"/>
+    <circle cx="20.5" cy="17.5" r="0.3" fill="currentColor"/>
+    <circle cx="17.5" cy="18.5" r="0.3" fill="currentColor"/>
+    <circle cx="19" cy="18.5" r="0.3" fill="currentColor"/>
   </g>
 </svg>
