@@ -15,15 +15,14 @@ export default defineConfig({
     target: "es2020",
     outDir: path.resolve(__dirname, "out/webview"),
     emptyOutDir: true,
-    lib: {
-      entry: path.resolve(__dirname, "src/webviews/bootstrap.tsx"),
-      name: "GithubDesktopWebview",
-      formats: ["iife"],
-      fileName: () => "index.js",
-    },
     rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, "src/webviews/bootstrap.tsx"),
+        'commit-detail': path.resolve(__dirname, "src/webviews/commitDetail/index.tsx"),
+      },
       output: {
-        inlineDynamicImports: true,
+        entryFileNames: '[name].js',
+        inlineDynamicImports: false,
       },
     },
   },

@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import simpleGit from 'simple-git';
 import { RepositoryManager } from '../repositoryManager';
 import { getPrimaryRepository } from '../utils/repoSelection';
+import { CommitDetailViewProvider } from './commitDetailView';
 
 interface ChangeEntry {
   path: string;
@@ -38,7 +39,8 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
 
   constructor(
     private readonly context: vscode.ExtensionContext,
-    private readonly repositories: RepositoryManager
+    private readonly repositories: RepositoryManager,
+    private readonly commitDetailProvider: CommitDetailViewProvider
   ) {}
 
   resolveWebviewView(webviewView: vscode.WebviewView): void | Thenable<void> {
@@ -47,10 +49,19 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
       enableScripts: true,
       localResourceRoots: [
         vscode.Uri.joinPath(this.context.extensionUri, 'out', 'webview'),
+        vscode.Uri.joinPath(this.context.extensionUri, 'out', 'webview', 'assets'),
         vscode.Uri.joinPath(this.context.extensionUri, 'out')
       ]
     };
     webviewView.webview.html = this.getHtml(webviewView.webview);
+
+    // Handle webview becoming visible/hidden
+    webviewView.onDidChangeVisibility(() => {
+      if (webviewView.visible) {
+        // Refresh data when webview becomes visible
+        this.postState();
+      }
+    });
 
     webviewView.webview.onDidReceiveMessage(async (message) => {
       switch (message.command) {
@@ -87,6 +98,46 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
           break;
         case 'getFileDiff':
           await this.getFileDiff(message.hash, message.filePath);
+          break;
+        case 'openCommitDetail':
+          if (typeof message.hash === 'string') {
+            await this.commitDetailProvider.showCommitDetails(message.hash);
+          }
+          break;
+        case 'resetToCommit':
+          if (typeof message.hash === 'string') {
+            await this.resetToCommit(message.hash);
+          }
+          break;
+        case 'checkoutCommit':
+          if (typeof message.hash === 'string') {
+            await this.checkoutCommit(message.hash);
+          }
+          break;
+        case 'revertCommit':
+          if (typeof message.hash === 'string') {
+            await this.revertCommit(message.hash);
+          }
+          break;
+        case 'createBranchFromCommit':
+          if (typeof message.hash === 'string') {
+            await this.createBranchFromCommit(message.hash);
+          }
+          break;
+        case 'createTagFromCommit':
+          if (typeof message.hash === 'string') {
+            await this.createTagFromCommit(message.hash);
+          }
+          break;
+        case 'cherryPickCommit':
+          if (typeof message.hash === 'string') {
+            await this.cherryPickCommit(message.hash);
+          }
+          break;
+        case 'viewCommitOnGitHub':
+          if (typeof message.hash === 'string') {
+            await this.viewCommitOnGitHub(message.hash);
+          }
           break;
         case 'selectCommit':
           if (typeof message.hash === 'string') {
@@ -627,7 +678,7 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
 
   private getHtml(webview: vscode.Webview): string {
     const reactAppUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.context.extensionUri, 'out', 'webview', 'index.js')
+      vscode.Uri.joinPath(this.context.extensionUri, 'out', 'webview', 'main.js')
     );
 
     const repository = getPrimaryRepository(this.repositories);
@@ -693,8 +744,136 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
         // Pass initial data to React app
         window.initialData = ${JSON.stringify(initialData)};
     </script>
-    <script src="${reactAppUri}"></script>
+    <script type="module" src="${reactAppUri}"></script>
 </body>
 </html>`;
+  }
+
+  private async resetToCommit(hash: string): Promise<void> {
+    const repository = getPrimaryRepository(this.repositories);
+    if (!repository) return;
+
+    const confirm = await vscode.window.showWarningMessage(
+      `Are you sure you want to reset to commit ${hash.substring(0, 7)}? This will discard all changes after this commit.`,
+      { modal: true },
+      'Reset',
+      'Cancel'
+    );
+
+    if (confirm === 'Reset') {
+      try {
+        const git = simpleGit(repository.localPath);
+        await git.reset(['--hard', hash]);
+        vscode.window.showInformationMessage(`Reset to commit ${hash.substring(0, 7)}`);
+        await this.postState();
+      } catch (error) {
+        vscode.window.showErrorMessage(`Failed to reset: ${error}`);
+      }
+    }
+  }
+
+  private async checkoutCommit(hash: string): Promise<void> {
+    const repository = getPrimaryRepository(this.repositories);
+    if (!repository) return;
+
+    try {
+      const git = simpleGit(repository.localPath);
+      await git.checkout(hash);
+      vscode.window.showInformationMessage(`Checked out commit ${hash.substring(0, 7)}`);
+      await this.postState();
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to checkout commit: ${error}`);
+    }
+  }
+
+  private async revertCommit(hash: string): Promise<void> {
+    const repository = getPrimaryRepository(this.repositories);
+    if (!repository) return;
+
+    try {
+      const git = simpleGit(repository.localPath);
+      await git.revert(hash, ['--no-edit']);
+      vscode.window.showInformationMessage(`Reverted commit ${hash.substring(0, 7)}`);
+      await this.postState();
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to revert commit: ${error}`);
+    }
+  }
+
+  private async createBranchFromCommit(hash: string): Promise<void> {
+    const branchName = await vscode.window.showInputBox({
+      prompt: 'Enter new branch name',
+      placeHolder: 'feature-branch-name',
+      ignoreFocusOut: true
+    });
+
+    if (!branchName) return;
+
+    const repository = getPrimaryRepository(this.repositories);
+    if (!repository) return;
+
+    try {
+      const git = simpleGit(repository.localPath);
+      await git.checkoutBranch(branchName, hash);
+      vscode.window.showInformationMessage(`Created branch '${branchName}' from commit ${hash.substring(0, 7)}`);
+      await this.postState();
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to create branch: ${error}`);
+    }
+  }
+
+  private async createTagFromCommit(hash: string): Promise<void> {
+    const tagName = await vscode.window.showInputBox({
+      prompt: 'Enter tag name',
+      placeHolder: 'v1.0.0',
+      ignoreFocusOut: true
+    });
+
+    if (!tagName) return;
+
+    const repository = getPrimaryRepository(this.repositories);
+    if (!repository) return;
+
+    try {
+      const git = simpleGit(repository.localPath);
+      await git.raw(['tag', tagName, hash]);
+      vscode.window.showInformationMessage(`Created tag '${tagName}' on commit ${hash.substring(0, 7)}`);
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to create tag: ${error}`);
+    }
+  }
+
+  private async cherryPickCommit(hash: string): Promise<void> {
+    const repository = getPrimaryRepository(this.repositories);
+    if (!repository) return;
+
+    try {
+      const git = simpleGit(repository.localPath);
+      await git.raw(['cherry-pick', hash]);
+      vscode.window.showInformationMessage(`Cherry-picked commit ${hash.substring(0, 7)}`);
+      await this.postState();
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to cherry-pick commit: ${error}`);
+    }
+  }
+
+  private async viewCommitOnGitHub(hash: string): Promise<void> {
+    const repository = getPrimaryRepository(this.repositories);
+    if (!repository?.remoteUrl) {
+      vscode.window.showWarningMessage('No GitHub remote found');
+      return;
+    }
+
+    try {
+      // Extract GitHub URL from git remote
+      const githubUrl = repository.remoteUrl
+        .replace(/^git@github\.com:/, 'https://github.com/')
+        .replace(/\.git$/, '');
+
+      const commitUrl = `${githubUrl}/commit/${hash}`;
+      vscode.env.openExternal(vscode.Uri.parse(commitUrl));
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to open GitHub: ${error}`);
+    }
   }
 }

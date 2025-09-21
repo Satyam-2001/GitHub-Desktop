@@ -7,6 +7,7 @@ import { RepositoryManager } from './repositoryManager';
 import { AccountsProvider } from './treeViews/accountsProvider';
 import { RepositoriesProvider } from './treeViews/repositoriesProvider';
 import { TimelineViewProvider } from './webviews/timelineView';
+import { CommitDetailViewProvider } from './webviews/commitDetailView';
 import { TrackedRepository } from './types';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -17,7 +18,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   const accountsProvider = new AccountsProvider(accountManager);
   const repositoriesProvider = new RepositoriesProvider(repositoryManager, accountManager);
-  const timelineProvider = new TimelineViewProvider(context, repositoryManager);
+  const commitDetailProvider = new CommitDetailViewProvider(context, repositoryManager);
+  const timelineProvider = new TimelineViewProvider(context, repositoryManager, commitDetailProvider);
 
   const refreshAllViews = () => {
     void timelineProvider.refresh();

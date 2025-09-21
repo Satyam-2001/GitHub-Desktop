@@ -16,6 +16,9 @@ export const App: React.FC<AppProps> = ({ bridge, initialState }) => {
   const [branchActivity, setBranchActivity] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    // Send ready message to request initial data
+    bridge.sendMessage('ready');
+
     bridge.onMessage((message) => {
       switch (message.command) {
         case 'updateChanges':

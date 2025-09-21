@@ -13,6 +13,10 @@ import {
   Divider,
   Chip,
   Avatar,
+  Menu,
+  MenuItem,
+  MenuList,
+  Paper,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
@@ -20,10 +24,19 @@ import {
   CloudDownload as PullIcon,
   Add as AddIcon,
   Remove as RemoveIcon,
+  Close as CloseIcon,
+  RestartAlt as ResetIcon,
+  CheckCircle as CheckoutIcon,
+  Reorder as ReorderIcon,
+  Undo as RevertIcon,
+  AccountTree as BranchIcon,
+  LocalOffer as TagIcon,
+  CallMerge as CherryPickIcon,
+  ContentCopy as CopyIcon,
+  OpenInNew as ViewIcon,
 } from '@mui/icons-material';
 import { VSCodeBridge, GitChange, GitCommit, Repository } from '../bridge';
 import { BranchDropdown } from './BranchDropdown';
-import { CommitDetailPanel } from './CommitDetailPanel';
 
 interface TimelineProps {
   changes: GitChange[];
@@ -47,8 +60,11 @@ export const Timeline: React.FC<TimelineProps> = ({
   const [activeTab, setActiveTab] = useState<'changes' | 'history'>('changes');
   const [commitMessage, setCommitMessage] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
-  const [selectedCommit, setSelectedCommit] = useState<any>(null);
-  const [showCommitDetail, setShowCommitDetail] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{
+    mouseX: number;
+    mouseY: number;
+    commit: GitCommit | null;
+  } | null>(null);
 
   const handleTabChange = (tab: 'changes' | 'history') => {
     setActiveTab(tab);
@@ -94,29 +110,61 @@ export const Timeline: React.FC<TimelineProps> = ({
   };
 
   const handleCommitSelect = (commit: GitCommit) => {
-    bridge.sendMessage('getCommitDetails', { hash: commit.hash });
+    console.log('Selecting commit:', commit.hash);
+    bridge.sendMessage('openCommitDetail', { hash: commit.hash });
   };
 
-  const handleCommitDetailReceived = (commitDetail: any) => {
-    setSelectedCommit(commitDetail);
-    setShowCommitDetail(true);
+  const handleCommitContextMenu = (event: React.MouseEvent, commit: GitCommit) => {
+    event.preventDefault();
+
+    // Always set the new context menu, even if one is already open
+    setContextMenu({
+      mouseX: event.clientX + 2,
+      mouseY: event.clientY - 6,
+      commit,
+    });
   };
 
-  // Listen for commit details from bridge
-  useEffect(() => {
-    const handleMessage = (message: any) => {
-      if (message.command === 'commitDetails') {
-        handleCommitDetailReceived(message.commitDetail);
-      }
-    };
-
-    bridge.onMessage(handleMessage);
-  }, [bridge]);
-
-  const handleCloseCommitDetail = () => {
-    setShowCommitDetail(false);
-    setSelectedCommit(null);
+  const handleContextMenuClose = () => {
+    setContextMenu(null);
   };
+
+  const handleContextMenuAction = (action: string, commit: GitCommit) => {
+    switch (action) {
+      case 'reset':
+        bridge.sendMessage('resetToCommit', { hash: commit.hash });
+        break;
+      case 'checkout':
+        bridge.sendMessage('checkoutCommit', { hash: commit.hash });
+        break;
+      case 'reorder':
+        bridge.sendMessage('reorderCommit', { hash: commit.hash });
+        break;
+      case 'revert':
+        bridge.sendMessage('revertCommit', { hash: commit.hash });
+        break;
+      case 'createBranch':
+        bridge.sendMessage('createBranchFromCommit', { hash: commit.hash });
+        break;
+      case 'createTag':
+        bridge.sendMessage('createTagFromCommit', { hash: commit.hash });
+        break;
+      case 'cherryPick':
+        bridge.sendMessage('cherryPickCommit', { hash: commit.hash });
+        break;
+      case 'copySha':
+        navigator.clipboard.writeText(commit.hash);
+        break;
+      case 'copyTag':
+        navigator.clipboard.writeText(`${commit.message} (${commit.hash.substring(0, 7)})`);
+        break;
+      case 'viewOnGitHub':
+        bridge.sendMessage('viewCommitOnGitHub', { hash: commit.hash });
+        break;
+    }
+    handleContextMenuClose();
+  };
+
 
   const generateAvatarUrl = (email: string, name: string) => {
     const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#6c5ce7', '#fd79a8'];
@@ -151,7 +199,7 @@ export const Timeline: React.FC<TimelineProps> = ({
       {/* Header */}
       <Box sx={{
         px: 0,
-        py: 2,
+        py: 1,
         borderBottom: '1px solid var(--vscode-sideBarSectionHeader-border)',
         bgcolor: 'var(--vscode-sideBar-background)'
       }}>
@@ -176,14 +224,6 @@ export const Timeline: React.FC<TimelineProps> = ({
             <RefreshIcon sx={{ fontSize: 16 }} />
           </IconButton>
         </Box>
-
-        <Typography variant="body2" sx={{
-          color: 'var(--vscode-descriptionForeground)',
-          fontSize: '12px',
-          px: 2
-        }}>
-          {repository?.name || 'No repository'}
-        </Typography>
       </Box>
 
       {/* Tabs */}
@@ -527,13 +567,7 @@ export const Timeline: React.FC<TimelineProps> = ({
         )}
 
         {activeTab === 'history' && (
-          <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-            {/* Commit List */}
-            <Box sx={{
-              width: showCommitDetail ? '50%' : '100%',
-              borderRight: showCommitDetail ? '1px solid var(--vscode-sideBarSectionHeader-border)' : 'none',
-              overflow: 'auto'
-            }}>
+          <Box sx={{ flex: 1, overflow: 'auto' }}>
               <List sx={{ py: 0 }}>
                 {history.map((commit) => (
                   <ListItem
@@ -543,12 +577,12 @@ export const Timeline: React.FC<TimelineProps> = ({
                       px: 1.5,
                       borderBottom: '1px solid var(--vscode-sideBarSectionHeader-border)',
                       cursor: 'pointer',
-                      bgcolor: selectedCommit?.hash === commit.hash ? 'var(--vscode-list-activeSelectionBackground)' : 'transparent',
                       '&:hover': {
-                        bgcolor: selectedCommit?.hash === commit.hash ? 'var(--vscode-list-activeSelectionBackground)' : 'var(--vscode-list-hoverBackground)'
+                        bgcolor: 'var(--vscode-list-hoverBackground)'
                       }
                     }}
                     onClick={() => handleCommitSelect(commit)}
+                    onContextMenu={(e) => handleCommitContextMenu(e, commit)}
                   >
                     <ListItemText
                       sx={{ pl: 1 }}
@@ -556,7 +590,7 @@ export const Timeline: React.FC<TimelineProps> = ({
                         <Typography sx={{
                           fontSize: '13px',
                           fontWeight: 500,
-                          color: selectedCommit?.hash === commit.hash ? 'var(--vscode-list-activeSelectionForeground)' : 'var(--vscode-foreground)',
+                          color: 'var(--vscode-foreground)',
                           mb: 0.5,
                           lineHeight: 1.3
                         }}>
@@ -626,19 +660,256 @@ export const Timeline: React.FC<TimelineProps> = ({
                   </Typography>
                 </Box>
               )}
-            </Box>
 
-            {/* Commit Detail Panel */}
-            {showCommitDetail && (
-              <CommitDetailPanel
-                commit={selectedCommit}
-                onClose={handleCloseCommitDetail}
-                bridge={bridge}
-              />
-            )}
           </Box>
         )}
       </Box>
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <>
+          {/* Backdrop */}
+          <Box
+            sx={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 1300,
+            }}
+            onClick={handleContextMenuClose}
+          />
+
+          {/* Menu */}
+          <Paper
+            sx={{
+              position: 'fixed',
+              top: contextMenu.mouseY,
+              left: contextMenu.mouseX,
+              zIndex: 1301,
+              bgcolor: 'var(--vscode-menu-background, #2d2d30)',
+              border: '1px solid var(--vscode-menu-border, #454545)',
+              borderRadius: '3px',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.5)',
+              minWidth: 220,
+              py: 0.5,
+            }}
+          >
+            <MenuList dense disablePadding>
+              <MenuItem
+                onClick={() => handleContextMenuAction('reset', contextMenu.commit!)}
+                sx={{
+                  fontSize: '13px',
+                  color: 'var(--vscode-menu-foreground, #cccccc)',
+                  px: 2,
+                  py: 0.5,
+                  minHeight: 'auto',
+                  '&:hover': {
+                    bgcolor: 'var(--vscode-menu-selectionBackground, #094771)',
+                    color: 'var(--vscode-menu-selectionForeground, #ffffff)'
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
+                  <ResetIcon sx={{ fontSize: 16 }} />
+                </ListItemIcon>
+                Reset to commit...
+              </MenuItem>
+
+              <MenuItem
+                onClick={() => handleContextMenuAction('checkout', contextMenu.commit!)}
+                sx={{
+                  fontSize: '13px',
+                  color: 'var(--vscode-menu-foreground, #cccccc)',
+                  px: 2,
+                  py: 0.5,
+                  minHeight: 'auto',
+                  '&:hover': {
+                    bgcolor: 'var(--vscode-menu-selectionBackground, #094771)',
+                    color: 'var(--vscode-menu-selectionForeground, #ffffff)'
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
+                  <CheckoutIcon sx={{ fontSize: 16 }} />
+                </ListItemIcon>
+                Checkout commit
+              </MenuItem>
+
+              <MenuItem
+                onClick={() => handleContextMenuAction('reorder', contextMenu.commit!)}
+                sx={{
+                  fontSize: '13px',
+                  color: 'var(--vscode-menu-foreground, #cccccc)',
+                  px: 2,
+                  py: 0.5,
+                  minHeight: 'auto',
+                  '&:hover': {
+                    bgcolor: 'var(--vscode-menu-selectionBackground, #094771)',
+                    color: 'var(--vscode-menu-selectionForeground, #ffffff)'
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
+                  <ReorderIcon sx={{ fontSize: 16 }} />
+                </ListItemIcon>
+                Reorder commit
+              </MenuItem>
+
+              <MenuItem
+                onClick={() => handleContextMenuAction('revert', contextMenu.commit!)}
+                sx={{
+                  fontSize: '13px',
+                  color: 'var(--vscode-menu-foreground, #cccccc)',
+                  px: 2,
+                  py: 0.5,
+                  minHeight: 'auto',
+                  '&:hover': {
+                    bgcolor: 'var(--vscode-menu-selectionBackground, #094771)',
+                    color: 'var(--vscode-menu-selectionForeground, #ffffff)'
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
+                  <RevertIcon sx={{ fontSize: 16 }} />
+                </ListItemIcon>
+                Revert changes in commit
+              </MenuItem>
+
+              <Divider sx={{
+                borderColor: 'var(--vscode-menu-separatorBackground, #454545)',
+                my: 0.5
+              }} />
+
+              <MenuItem
+                onClick={() => handleContextMenuAction('createBranch', contextMenu.commit!)}
+                sx={{
+                  fontSize: '13px',
+                  color: 'var(--vscode-menu-foreground, #cccccc)',
+                  px: 2,
+                  py: 0.5,
+                  minHeight: 'auto',
+                  '&:hover': {
+                    bgcolor: 'var(--vscode-menu-selectionBackground, #094771)',
+                    color: 'var(--vscode-menu-selectionForeground, #ffffff)'
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
+                  <BranchIcon sx={{ fontSize: 16 }} />
+                </ListItemIcon>
+                Create branch from commit
+              </MenuItem>
+
+              <MenuItem
+                onClick={() => handleContextMenuAction('createTag', contextMenu.commit!)}
+                sx={{
+                  fontSize: '13px',
+                  color: 'var(--vscode-menu-foreground, #cccccc)',
+                  px: 2,
+                  py: 0.5,
+                  minHeight: 'auto',
+                  '&:hover': {
+                    bgcolor: 'var(--vscode-menu-selectionBackground, #094771)',
+                    color: 'var(--vscode-menu-selectionForeground, #ffffff)'
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
+                  <TagIcon sx={{ fontSize: 16 }} />
+                </ListItemIcon>
+                Create tag...
+              </MenuItem>
+
+              <MenuItem
+                onClick={() => handleContextMenuAction('cherryPick', contextMenu.commit!)}
+                sx={{
+                  fontSize: '13px',
+                  color: 'var(--vscode-menu-foreground, #cccccc)',
+                  px: 2,
+                  py: 0.5,
+                  minHeight: 'auto',
+                  '&:hover': {
+                    bgcolor: 'var(--vscode-menu-selectionBackground, #094771)',
+                    color: 'var(--vscode-menu-selectionForeground, #ffffff)'
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
+                  <CherryPickIcon sx={{ fontSize: 16 }} />
+                </ListItemIcon>
+                Cherry-pick commit...
+              </MenuItem>
+
+              <Divider sx={{
+                borderColor: 'var(--vscode-menu-separatorBackground, #454545)',
+                my: 0.5
+              }} />
+
+              <MenuItem
+                onClick={() => handleContextMenuAction('copySha', contextMenu.commit!)}
+                sx={{
+                  fontSize: '13px',
+                  color: 'var(--vscode-menu-foreground, #cccccc)',
+                  px: 2,
+                  py: 0.5,
+                  minHeight: 'auto',
+                  '&:hover': {
+                    bgcolor: 'var(--vscode-menu-selectionBackground, #094771)',
+                    color: 'var(--vscode-menu-selectionForeground, #ffffff)'
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
+                  <CopyIcon sx={{ fontSize: 16 }} />
+                </ListItemIcon>
+                Copy SHA
+              </MenuItem>
+
+              <MenuItem
+                onClick={() => handleContextMenuAction('copyTag', contextMenu.commit!)}
+                sx={{
+                  fontSize: '13px',
+                  color: 'var(--vscode-menu-foreground, #cccccc)',
+                  px: 2,
+                  py: 0.5,
+                  minHeight: 'auto',
+                  '&:hover': {
+                    bgcolor: 'var(--vscode-menu-selectionBackground, #094771)',
+                    color: 'var(--vscode-menu-selectionForeground, #ffffff)'
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
+                  <CopyIcon sx={{ fontSize: 16 }} />
+                </ListItemIcon>
+                Copy tag
+              </MenuItem>
+
+              <MenuItem
+                onClick={() => handleContextMenuAction('viewOnGitHub', contextMenu.commit!)}
+                sx={{
+                  fontSize: '13px',
+                  color: 'var(--vscode-menu-foreground, #cccccc)',
+                  px: 2,
+                  py: 0.5,
+                  minHeight: 'auto',
+                  '&:hover': {
+                    bgcolor: 'var(--vscode-menu-selectionBackground, #094771)',
+                    color: 'var(--vscode-menu-selectionForeground, #ffffff)'
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
+                  <ViewIcon sx={{ fontSize: 16 }} />
+                </ListItemIcon>
+                View on GitHub
+              </MenuItem>
+            </MenuList>
+          </Paper>
+        </>
+      )}
     </Box>
   );
 };

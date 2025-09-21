@@ -84,13 +84,11 @@ export const CommitDetailPanel: React.FC<CommitDetailPanelProps> = ({
   return (
     <Box
       sx={{
-        width: 400,
-        height: '100%',
+        width: '100%',
+        minHeight: '300px',
         bgcolor: 'var(--vscode-sideBar-background)',
-        borderLeft: '1px solid var(--vscode-sideBarSectionHeader-border)',
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden',
       }}
     >
       {/* Header */}
@@ -98,7 +96,7 @@ export const CommitDetailPanel: React.FC<CommitDetailPanelProps> = ({
         sx={{
           p: 2,
           borderBottom: '1px solid var(--vscode-sideBarSectionHeader-border)',
-          bgcolor: 'var(--vscode-sideBar-background)',
+          bgcolor: 'var(--vscode-sideBarSectionHeader-background)',
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
@@ -224,7 +222,7 @@ export const CommitDetailPanel: React.FC<CommitDetailPanelProps> = ({
       {/* Files List */}
       <Box
         sx={{
-          flex: 1,
+          maxHeight: 300,
           overflow: 'auto',
           '&::-webkit-scrollbar': {
             width: '8px',
