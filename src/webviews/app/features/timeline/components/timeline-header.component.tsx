@@ -1,85 +1,144 @@
 import React from 'react';
-import { Box, IconButton } from '@mui/material';
-import { Refresh as RefreshIcon, CallSplit as NewBranchIcon } from '@mui/icons-material';
-import { BranchDropdown } from '../../branches/components/branch-dropdown.component';
-import { useBranches } from '../../branches/hooks/use-branches.hook';
-import { CreateBranchDialog } from '../../branches/components/create-branch-dialog.component';
-import { SyncButton } from '../../sync/components/sync-button.component';
-import { useRemoteStatus } from '../../sync/hooks/use-remote-status.hook';
+import { Box, Typography, IconButton } from '@mui/material';
+import {
+  CallSplit as BranchIcon,
+  KeyboardArrowDown as DropdownIcon,
+  ArrowDownward as PullIcon
+} from '@mui/icons-material';
 
 export const TimelineHeader: React.FC = () => {
-  const { branches, currentBranch, refresh, switchToBranch } = useBranches();
-  const { remoteStatus, publish, fetch, push, pull } = useRemoteStatus();
-  const [createBranchOpen, setCreateBranchOpen] = React.useState(false);
-
-  const handleRefresh = () => {
-    refresh();
-  };
-
-  const handleCreateBranch = () => {
-    setCreateBranchOpen(true);
-  };
-
   return (
-    <>
+    <Box sx={{
+      display: 'flex',
+      alignItems: 'center',
+      px: 2,
+      py: 1.5,
+      borderBottom: '1px solid var(--vscode-sideBarSectionHeader-border)',
+      bgcolor: 'var(--vscode-sideBar-background)',
+      minHeight: '48px'
+    }}>
+      {/* Branch Section */}
       <Box sx={{
-        px: 0,
-        py: 1,
-        borderBottom: '1px solid var(--vscode-sideBarSectionHeader-border)',
-        bgcolor: 'var(--vscode-sideBar-background)'
+        display: 'flex',
+        alignItems: 'center',
+        flex: 1,
+        cursor: 'pointer',
+        '&:hover': {
+          bgcolor: 'var(--vscode-list-hoverBackground)'
+        },
+        borderRadius: '3px',
+        px: 1,
+        py: 0.5
       }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, px: 2, gap: 1 }}>
-          <BranchDropdown
-            currentBranch={currentBranch}
-            branches={branches}
-            onBranchSelect={switchToBranch}
-          />
-
-          <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
-            {remoteStatus && (
-              <SyncButton
-                remoteStatus={remoteStatus}
-                onPublish={publish}
-                onFetch={fetch}
-                onPush={push}
-                onPull={pull}
-              />
-            )}
-
-            <IconButton
-              onClick={handleCreateBranch}
-              size="small"
-              sx={{
-                color: 'var(--vscode-foreground)',
-                '&:hover': {
-                  bgcolor: 'var(--vscode-list-hoverBackground)'
-                }
-              }}
-              title="Create New Branch"
-            >
-              <NewBranchIcon sx={{ fontSize: 16 }} />
-            </IconButton>
-
-            <IconButton
-              onClick={handleRefresh}
-              size="small"
-              sx={{
-                color: 'var(--vscode-foreground)',
-                '&:hover': {
-                  bgcolor: 'var(--vscode-list-hoverBackground)'
-                }
-              }}
-            >
-              <RefreshIcon sx={{ fontSize: 16 }} />
-            </IconButton>
-          </Box>
+        <BranchIcon sx={{
+          fontSize: 16,
+          color: 'var(--vscode-descriptionForeground)',
+          mr: 1
+        }} />
+        <Box sx={{ flex: 1 }}>
+          <Typography sx={{
+            fontSize: '11px',
+            color: 'var(--vscode-descriptionForeground)',
+            lineHeight: 1.2
+          }}>
+            Current branch
+          </Typography>
+          <Typography sx={{
+            fontSize: '13px',
+            color: 'var(--vscode-foreground)',
+            fontWeight: 500,
+            lineHeight: 1.2
+          }}>
+            dev
+          </Typography>
         </Box>
+        <DropdownIcon sx={{
+          fontSize: 16,
+          color: 'var(--vscode-descriptionForeground)'
+        }} />
       </Box>
 
-      <CreateBranchDialog
-        open={createBranchOpen}
-        onClose={() => setCreateBranchOpen(false)}
-      />
-    </>
+      {/* Pull Origin Section */}
+      <Box sx={{
+        display: 'flex',
+        alignItems: 'center',
+        cursor: 'pointer',
+        '&:hover': {
+          bgcolor: 'var(--vscode-list-hoverBackground)'
+        },
+        borderRadius: '3px',
+        px: 1,
+        py: 0.5,
+        ml: 1
+      }}>
+        <PullIcon sx={{
+          fontSize: 16,
+          color: 'var(--vscode-descriptionForeground)',
+          mr: 1
+        }} />
+        <Box sx={{ flex: 1 }}>
+          <Typography sx={{
+            fontSize: '13px',
+            color: 'var(--vscode-foreground)',
+            fontWeight: 500,
+            lineHeight: 1.2
+          }}>
+            Pull origin
+          </Typography>
+          <Typography sx={{
+            fontSize: '11px',
+            color: 'var(--vscode-descriptionForeground)',
+            lineHeight: 1.2
+          }}>
+            Last fetched 3...
+          </Typography>
+        </Box>
+
+        {/* Sync Counters */}
+        <Box sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0.5,
+          mr: 1
+        }}>
+          <Typography sx={{
+            fontSize: '11px',
+            color: 'var(--vscode-foreground)',
+            bgcolor: 'var(--vscode-badge-background)',
+            px: 0.5,
+            borderRadius: '2px',
+            minWidth: '16px',
+            textAlign: 'center'
+          }}>
+            6
+          </Typography>
+          <PullIcon sx={{
+            fontSize: 12,
+            color: 'var(--vscode-descriptionForeground)'
+          }} />
+          <Typography sx={{
+            fontSize: '11px',
+            color: 'var(--vscode-foreground)',
+            bgcolor: 'var(--vscode-badge-background)',
+            px: 0.5,
+            borderRadius: '2px',
+            minWidth: '16px',
+            textAlign: 'center'
+          }}>
+            51
+          </Typography>
+          <PullIcon sx={{
+            fontSize: 12,
+            color: 'var(--vscode-descriptionForeground)',
+            transform: 'rotate(180deg)'
+          }} />
+        </Box>
+
+        <DropdownIcon sx={{
+          fontSize: 16,
+          color: 'var(--vscode-descriptionForeground)'
+        }} />
+      </Box>
+    </Box>
   );
 };

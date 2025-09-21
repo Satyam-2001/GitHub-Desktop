@@ -21,7 +21,7 @@ export const FileListItem: React.FC<FileListItemProps> = ({
   return (
     <ListItem
       sx={{
-        py: 1,
+        py: 0.6,
         px: 2,
         cursor: "pointer",
         borderBottom: "1px solid var(--vscode-sideBarSectionHeader-border)",

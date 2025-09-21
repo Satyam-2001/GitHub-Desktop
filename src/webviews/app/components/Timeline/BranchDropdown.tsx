@@ -24,8 +24,10 @@ import {
   MergeType as MergeIcon,
   GitHub as PRIcon,
   Close as CloseIcon,
+  Add as AddIcon,
 } from "@mui/icons-material";
 import { VSCodeBridge } from "../../bridge";
+import { NewBranchDialog } from "./components/NewBranchDialog";
 
 interface BranchDropdownProps {
   currentBranch: string | null;
@@ -53,6 +55,8 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
   const [selectedMergeBranch, setSelectedMergeBranch] = useState<string | null>(
     null
   );
+  const [newBranchDialogOpen, setNewBranchDialogOpen] = useState(false);
+  const [newBranchName, setNewBranchName] = useState("");
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   const open = Boolean(anchorEl);
@@ -101,6 +105,27 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
       bridge.sendMessage("createPullRequest", { branch: currentBranch });
     }
     handleClose();
+  };
+
+  const handleNewBranchDialogOpen = () => {
+    setNewBranchDialogOpen(true);
+    setNewBranchName("");
+  };
+
+  const handleNewBranchDialogClose = () => {
+    setNewBranchDialogOpen(false);
+    setNewBranchName("");
+  };
+
+  const handleCreateNewBranch = () => {
+    if (newBranchName.trim()) {
+      bridge.sendMessage("createBranch", {
+        branchName: newBranchName.trim(),
+        fromBranch: currentBranch
+      });
+      handleNewBranchDialogClose();
+      handleClose();
+    }
   };
 
   // Group branches
@@ -254,49 +279,53 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
 
   return (
     <>
-      <Button
+      <Box
         ref={buttonRef}
         onClick={handleClick}
         sx={{
-          minWidth: 140,
-          justifyContent: "space-between",
-          color: "var(--vscode-foreground)",
-          fontSize: "14px",
-          fontWeight: 500,
-          textTransform: "none",
-          px: 1,
-          py: 0.5,
-          bgcolor: "var(--vscode-sideBar-background)",
-          "&:hover": {
-            bgcolor: "var(--vscode-list-hoverBackground)",
+          display: 'flex',
+          alignItems: 'center',
+          width: '100%',
+          cursor: 'pointer',
+          '&:hover': {
+            bgcolor: 'var(--vscode-list-hoverBackground)'
           },
+          borderRadius: '3px',
+          px: 1,
+          py: 0.5
         }}
-        endIcon={
-          <ArrowDownIcon
-            sx={{
-              fontSize: 16,
-              color: "var(--vscode-foreground)",
-              transform: open ? "rotate(180deg)" : "rotate(0deg)",
-              transition: "transform 0.2s ease",
-            }}
-          />
-        }
       >
-        <Box sx={{ display: "flex", alignItems: "center", overflow: "hidden" }}>
-          <BranchIcon sx={{ fontSize: 16, mr: 1 }} />
-          <Typography
-            sx={{
-              fontSize: "14px",
-              fontWeight: 500,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {currentBranch || "No branch"}
+        <BranchIcon sx={{
+          fontSize: 16,
+          color: 'var(--vscode-descriptionForeground)',
+          mr: 1
+        }} />
+        <Box sx={{ flex: 1 }}>
+          <Typography sx={{
+            fontSize: '11px',
+            color: 'var(--vscode-descriptionForeground)',
+            lineHeight: 1.2
+          }}>
+            Current branch
+          </Typography>
+          <Typography sx={{
+            fontSize: '13px',
+            color: 'var(--vscode-foreground)',
+            fontWeight: 500,
+            lineHeight: 1.2
+          }}>
+            {currentBranch || 'No branch'}
           </Typography>
         </Box>
-      </Button>
+        <ArrowDownIcon
+          sx={{
+            fontSize: 16,
+            color: "var(--vscode-descriptionForeground)",
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 0.2s ease",
+          }}
+        />
+      </Box>
 
       <Popover
         open={open}
@@ -323,7 +352,13 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
         }}
       >
         {/* Search */}
-        <Box sx={{ p: 1.5, bgcolor: "var(--vscode-sideBar-background)" }}>
+        <Box sx={{
+          p: 1.5,
+          bgcolor: "var(--vscode-sideBar-background)",
+          display: "flex",
+          gap: 1,
+          alignItems: "center"
+        }}>
           <TextField
             fullWidth
             placeholder="Find a branch..."
@@ -376,6 +411,22 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
               },
             }}
           />
+          <IconButton
+            onClick={handleNewBranchDialogOpen}
+            size="small"
+            sx={{
+              p: 0.75,
+              bgcolor: "var(--vscode-button-background)",
+              color: "var(--vscode-button-foreground)",
+              borderRadius: 1,
+              "&:hover": {
+                bgcolor: "var(--vscode-button-hoverBackground)",
+              },
+            }}
+            title="Create new branch"
+          >
+            <AddIcon sx={{ fontSize: 16 }} />
+          </IconButton>
         </Box>
 
         {/* Content */}
@@ -449,6 +500,7 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
         {/* Actions */}
         <Box
           sx={{
+            p: 1,
             bgcolor: "var(--vscode-sideBar-background)",
             borderTop: "1px solid var(--vscode-sideBarSectionHeader-border)",
           }}
@@ -463,7 +515,6 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
               fontSize: "13px",
               textTransform: "none",
               py: 1,
-              m: 1,
               bgcolor: "var(--vscode-sideBar-background)",
               "&:hover": {
                 bgcolor: "var(--vscode-list-hoverBackground)",
@@ -676,6 +727,15 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* New Branch Dialog */}
+      <NewBranchDialog
+        open={newBranchDialogOpen}
+        branchName={newBranchName}
+        onClose={handleNewBranchDialogClose}
+        onBranchNameChange={setNewBranchName}
+        onConfirm={handleCreateNewBranch}
+      />
     </>
   );
 };
