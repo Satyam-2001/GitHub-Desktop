@@ -27,15 +27,7 @@
         "react"
     ],
     "activationEvents": [
-        "onStartupFinished",
-        "onCommand:githubDesktop.signIn",
-        "onCommand:githubDesktop.switchAccount",
-        "onCommand:githubDesktop.cloneRepository",
-        "onCommand:githubDesktop.openRepository",
-        "onCommand:githubDesktop.createIssue",
-        "onView:githubDesktop.accounts",
-        "onView:githubDesktop.repositories",
-        "onView:githubDesktop.timeline"
+        "onStartupFinished"
     ],
     "main": "./dist/extension.js",
     "contributes": {
@@ -90,16 +82,19 @@
                 {
                     "id": "githubDesktop.timeline",
                     "name": "Changes & History",
-                    "type": "webview"
+                    "type": "webview",
+                    "icon": "$(history)"
                 },
                 {
                     "id": "githubDesktop.accounts",
                     "name": "Accounts",
+                    "icon": "$(account)",
                     "collapsed": true
                 },
                 {
                     "id": "githubDesktop.repositories",
                     "name": "Repositories",
+                    "icon": "$(repo)",
                     "collapsed": true
                 }
             ]
@@ -112,7 +107,7 @@
         "watch": "webpack --mode development --watch",
         "watch-webview": "vite build --config vite.webview.config.ts --watch",
         "dev-webview": "vite dev --config vite.webview.config.ts",
-        "package": "vsce package --no-dependencies",
+        "package": "vsce package --no-dependencies --allow-missing-repository",
         "test": "npm run compile && node ./out/test/runTest.js"
     },
     "devDependencies": {
