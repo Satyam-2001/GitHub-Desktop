@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import simpleGit from 'simple-git';
-import { RepositoryManager } from '../repositoryManager';
-import { getPrimaryRepository } from '../utils/repoSelection';
+import { RepositoryManager } from '../../core/repositories/repository-manager';
+import { getPrimaryRepository } from '../../shared/utils/repo-selection';
 
 const MAX_COMMITS = 50;
 
@@ -46,7 +46,7 @@ export class HistoryProvider implements vscode.TreeDataProvider<vscode.TreeItem>
 
       return log.all.map((commit) => {
         const when = this.formatRelativeTime(new Date(commit.date));
-        const description = `${commit.author_name} • ${when}`;
+        const description = `${commit.author_name} ï¿½ ${when}`;
         const tooltip = `${commit.hash}\n${commit.author_name} <${commit.author_email}>\n${commit.date}`;
         return new HistoryItem(commit.message, description, tooltip);
       });

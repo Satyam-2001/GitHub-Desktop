@@ -84,10 +84,10 @@ export const App: React.FC<AppProps> = ({ bridge, initialState }) => {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <Timeline
-          changes={state.changes}
-          history={state.history}
-          branches={state.branches}
-          branchActivity={branchActivity}
+          changes={state.changes || []}
+          history={state.history || []}
+          branches={state.branches || []}
+          branchActivity={branchActivity || {}}
           currentBranch={state.currentBranch}
           repository={state.repository}
           bridge={bridge}

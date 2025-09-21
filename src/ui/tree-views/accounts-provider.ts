@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { AccountManager } from '../accountManager';
-import { StoredAccount } from '../types';
+import { AccountManager } from '../../core/accounts/account-manager';
+import { StoredAccount } from '../../shared/types';
 
 class AccountItem extends vscode.TreeItem {
   constructor(account: StoredAccount, active: boolean) {

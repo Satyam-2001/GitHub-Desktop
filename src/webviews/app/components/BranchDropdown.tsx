@@ -105,18 +105,22 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
 
   // Group branches
   const groupBranches = (): BranchGroups => {
-    const defaultBranches = branches.filter((branch) =>
+    // Handle undefined or null branches array
+    const safeBranches = branches || [];
+    const safeBranchActivity = branchActivity || {};
+
+    const defaultBranches = safeBranches.filter((branch) =>
       ["main", "master", "develop", "dev"].includes(branch.toLowerCase())
     );
 
-    const nonDefaultBranches = branches.filter(
+    const nonDefaultBranches = safeBranches.filter(
       (branch) => !defaultBranches.includes(branch) && branch !== currentBranch
     );
 
     // Sort by activity date for recent branches
     const sortedByActivity = nonDefaultBranches.sort((a, b) => {
-      const aActivity = branchActivity[a] || "";
-      const bActivity = branchActivity[b] || "";
+      const aActivity = safeBranchActivity[a] || "";
+      const bActivity = safeBranchActivity[b] || "";
       return aActivity.localeCompare(bActivity);
     });
 
@@ -133,8 +137,8 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
   const filteredBranches = () => {
     if (!searchTerm) return groupBranches();
 
-    const filtered = branches.filter((branch) =>
-      branch.toLowerCase().includes(searchTerm.toLowerCase())
+    const filtered = (branches || []).filter((branch) =>
+      (branch || '').toLowerCase().includes((searchTerm || '').toLowerCase())
     );
 
     return {
@@ -145,10 +149,10 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
   };
 
   const filteredMergeBranches = () => {
-    return branches.filter(
+    return (branches || []).filter(
       (branch) =>
         branch !== currentBranch &&
-        branch.toLowerCase().includes(mergeSearchTerm.toLowerCase())
+        (branch || '').toLowerCase().includes((mergeSearchTerm || '').toLowerCase())
     );
   };
 

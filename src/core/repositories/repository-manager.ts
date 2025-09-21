@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { randomUUID } from 'crypto';
-import { TrackedRepository } from './types';
+import { TrackedRepository } from '../../shared/types';
 
 const REPOSITORIES_KEY = 'githubDesktop.repositories';
 

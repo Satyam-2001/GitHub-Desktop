@@ -53,7 +53,8 @@ export const CommitDetailPanel: React.FC<CommitDetailPanelProps> = ({
   if (!commit) return null;
 
   const getStatusColor = (status: string) => {
-    switch (status.charAt(0)) {
+    const safeStatus = status || '';
+    switch (safeStatus.charAt(0)) {
       case "M":
         return "#f59e0b"; // Modified - amber
       case "A":
@@ -68,7 +69,8 @@ export const CommitDetailPanel: React.FC<CommitDetailPanelProps> = ({
   };
 
   const getStatusIcon = (status: string) => {
-    switch (status.charAt(0)) {
+    const safeStatus = status || '';
+    switch (safeStatus.charAt(0)) {
       case "A":
         return <AddIcon sx={{ fontSize: 12, color: "#10b981" }} />;
       case "D":
@@ -132,27 +134,32 @@ export const CommitDetailPanel: React.FC<CommitDetailPanelProps> = ({
       "#6c5ce7",
       "#fd79a8",
     ];
-    const colorIndex = email.charCodeAt(0) % colors.length;
+    const safeEmail = email || 'user@example.com';
+    const colorIndex = safeEmail.charCodeAt(0) % colors.length;
+    const color = colors[colorIndex] || colors[0];
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      commit.author
-    )}&background=${colors[colorIndex].slice(1)}&color=fff&size=32`;
+      commit.author || 'Unknown'
+    )}&background=${color.slice(1)}&color=fff&size=32`;
   };
 
   const formatCommitDate = (dateString: string) => {
     // Initialize dayjs plugins
     dayjs.extend(relativeTime);
 
+    // Handle undefined or null dateString
+    const safeDateString = dateString || '';
+
     // If it's already a relative format (contains "ago"), return as is
-    if (dateString.includes("ago") || dateString.includes("just now")) {
-      return dateString;
+    if (safeDateString.includes("ago") || safeDateString.includes("just now")) {
+      return safeDateString;
     }
 
     // Parse the date using dayjs
-    const date = dayjs(dateString);
+    const date = dayjs(safeDateString);
 
     // Check if it's a valid date
     if (!date.isValid()) {
-      return dateString; // Return original if parsing fails
+      return safeDateString || 'Invalid date'; // Return original if parsing fails
     }
 
     const now = dayjs();
@@ -235,7 +242,7 @@ export const CommitDetailPanel: React.FC<CommitDetailPanelProps> = ({
               bgcolor: "var(--vscode-button-background)",
             }}
           >
-            {commit.author.charAt(0).toUpperCase()}
+            {(commit.author || 'U').charAt(0).toUpperCase()}
           </Avatar>
           <Box>
             <Typography
@@ -394,9 +401,9 @@ export const CommitDetailPanel: React.FC<CommitDetailPanelProps> = ({
                           label={file.status}
                           size="small"
                           icon={
-                            file.status.charAt(0) === "A" ? (
+                            (file.status || '').charAt(0) === "A" ? (
                               <AddIcon sx={{ fontSize: 10 }} />
-                            ) : file.status.charAt(0) === "D" ? (
+                            ) : (file.status || '').charAt(0) === "D" ? (
                               <RemoveIcon sx={{ fontSize: 10 }} />
                             ) : undefined
                           }

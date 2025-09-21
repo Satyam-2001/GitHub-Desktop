@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
-import { RepositoryManager } from '../repositoryManager';
-import { AccountManager } from '../accountManager';
-import { TrackedRepository } from '../types';
+import { RepositoryManager } from '../../core/repositories/repository-manager';
+import { AccountManager } from '../../core/accounts/account-manager';
+import { TrackedRepository } from '../../shared/types';
 
 class RepositoryItem extends vscode.TreeItem {
   constructor(repo: TrackedRepository, accountLabel: string | undefined) {
@@ -11,7 +11,7 @@ class RepositoryItem extends vscode.TreeItem {
       contextParts.push(accountLabel);
     }
     contextParts.push(repo.localPath);
-    this.description = contextParts.join(' • ');
+    this.description = contextParts.join(' ï¿½ ');
     this.tooltip = `${repo.owner}/${repo.name}\n${repo.localPath}`;
     this.iconPath = new vscode.ThemeIcon(repo.remoteUrl ? 'repo' : 'repo-forked');
     this.resourceUri = vscode.Uri.file(repo.localPath);

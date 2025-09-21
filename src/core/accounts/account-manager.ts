@@ -3,7 +3,7 @@ import { Octokit } from '@octokit/rest';
 import { execFile } from 'child_process';
 import { randomUUID } from 'crypto';
 import { promisify } from 'util';
-import { StoredAccount } from './types';
+import { StoredAccount } from '../../shared/types';
 
 const ACCOUNTS_KEY = 'githubDesktop.accounts';
 const ACTIVE_ACCOUNT_KEY = 'githubDesktop.activeAccountId';

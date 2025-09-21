@@ -82,6 +82,7 @@ export const Timeline: React.FC<TimelineProps> = ({
   const [uncommittedChangesDialog, setUncommittedChangesDialog] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [allCommits, setAllCommits] = useState<GitCommit[]>([]);
+  const [selectedCommitHash, setSelectedCommitHash] = useState<string | null>(null);
 
   // Update allCommits when history changes (initial load or refresh)
   useEffect(() => {
@@ -201,17 +202,20 @@ export const Timeline: React.FC<TimelineProps> = ({
     // Initialize dayjs plugins
     dayjs.extend(relativeTime);
 
+    // Handle undefined or null dateString
+    const safeDateString = dateString || '';
+
     // If it's already a relative format (contains "ago"), return as is
-    if (dateString.includes('ago') || dateString.includes('just now')) {
-      return dateString;
+    if (safeDateString.includes('ago') || safeDateString.includes('just now')) {
+      return safeDateString;
     }
 
     // Parse the date using dayjs
-    const date = dayjs(dateString);
+    const date = dayjs(safeDateString);
 
     // Check if it's a valid date
     if (!date.isValid()) {
-      return dateString; // Return original if parsing fails
+      return safeDateString || 'Invalid date'; // Return original if parsing fails
     }
 
     const now = dayjs();
@@ -230,6 +234,7 @@ export const Timeline: React.FC<TimelineProps> = ({
 
   const handleCommitSelect = (commit: GitCommit) => {
     console.log('Selecting commit:', commit.hash);
+    setSelectedCommitHash(commit.hash);
     bridge.sendMessage('openCommitDetail', { hash: commit.hash });
   };
 
@@ -275,7 +280,7 @@ export const Timeline: React.FC<TimelineProps> = ({
         navigator.clipboard.writeText(commit.hash);
         break;
       case 'copyTag':
-        navigator.clipboard.writeText(`${commit.message} (${commit.hash.substring(0, 7)})`);
+        navigator.clipboard.writeText(`${commit.message || 'No message'} (${(commit.hash || '').substring(0, 7)})`);
         break;
       case 'viewOnGitHub':
         bridge.sendMessage('viewCommitOnGitHub', { hash: commit.hash });
@@ -287,16 +292,20 @@ export const Timeline: React.FC<TimelineProps> = ({
 
   const generateAvatarUrl = (email: string, name: string) => {
     const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#6c5ce7', '#fd79a8'];
-    const colorIndex = email.charCodeAt(0) % colors.length;
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${colors[colorIndex].slice(1)}&color=fff&size=32`;
+    const safeEmail = email || 'user@example.com';
+    const safeName = name || 'Unknown';
+    const colorIndex = safeEmail.charCodeAt(0) % colors.length;
+    const color = colors[colorIndex] || colors[0];
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(safeName)}&background=${color.slice(1)}&color=fff&size=32`;
   };
 
 
-  const stagedChanges = changes.filter(c => c.staged);
-  const unstagedChanges = changes.filter(c => !c.staged);
+  const stagedChanges = (changes || []).filter(c => c.staged);
+  const unstagedChanges = (changes || []).filter(c => !c.staged);
 
   const getStatusColor = (status: string) => {
-    switch (status.charAt(0)) {
+    const safeStatus = status || '';
+    switch (safeStatus.charAt(0)) {
       case 'M': return '#f59e0b'; // Modified - amber
       case 'A': return '#10b981'; // Added - green
       case 'D': return '#ef4444'; // Deleted - red
@@ -735,8 +744,13 @@ export const Timeline: React.FC<TimelineProps> = ({
                       px: 1.5,
                       borderBottom: '1px solid var(--vscode-sideBarSectionHeader-border)',
                       cursor: 'pointer',
+                      bgcolor: selectedCommitHash === commit.hash
+                        ? 'var(--vscode-list-activeSelectionBackground)'
+                        : 'transparent',
                       '&:hover': {
-                        bgcolor: 'var(--vscode-list-hoverBackground)'
+                        bgcolor: selectedCommitHash === commit.hash
+                          ? 'var(--vscode-list-activeSelectionBackground)'
+                          : 'var(--vscode-list-hoverBackground)'
                       }
                     }}
                     onClick={() => handleCommitSelect(commit)}
@@ -766,7 +780,7 @@ export const Timeline: React.FC<TimelineProps> = ({
                               bgcolor: 'var(--vscode-button-background)',
                             }}
                           >
-                            {commit.author.charAt(0).toUpperCase()}
+                            {(commit.author || 'U').charAt(0).toUpperCase()}
                           </Avatar>
                           <Typography sx={{
                             fontSize: '12px',
@@ -785,7 +799,7 @@ export const Timeline: React.FC<TimelineProps> = ({
                             fontSize: '12px',
                             color: 'var(--vscode-descriptionForeground)'
                           }}>
-                            {formatCommitDate(commit.date)}
+                            {commit.relativeTime || formatCommitDate(commit.date)}
                           </Typography>
                           <Typography sx={{
                             fontSize: '11px',
@@ -793,7 +807,7 @@ export const Timeline: React.FC<TimelineProps> = ({
                             color: 'var(--vscode-descriptionForeground)',
                             ml: 'auto'
                           }}>
-                            {commit.hash.substring(0, 7)}
+                            {(commit.hash || '').substring(0, 7)}
                           </Typography>
                         </Box>
                       }

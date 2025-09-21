@@ -1,8 +1,8 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import simpleGit from 'simple-git';
-import { RepositoryManager } from '../repositoryManager';
-import { getPrimaryRepository } from '../utils/repoSelection';
+import { RepositoryManager } from '../../core/repositories/repository-manager';
+import { getPrimaryRepository } from '../../shared/utils/repo-selection';
 
 class ChangeItem extends vscode.TreeItem {
   constructor(label: string, description: string | undefined, resourceUri: vscode.Uri | undefined) {
@@ -66,7 +66,7 @@ export class ChangesProvider implements vscode.TreeDataProvider<vscode.TreeItem>
 
   private formatStatusCode(index: string, workingDir: string): string {
     const combined = `${index ?? ''}${workingDir ?? ''}`.trim();
-    return combined.length > 0 ? combined : '•';
+    return combined.length > 0 ? combined : 'ï¿½';
   }
 
   private createInfoItem(message: string): vscode.TreeItem {

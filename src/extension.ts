@@ -1,26 +1,41 @@
-import { iconThemeService } from './iconThemeService';
-import * as path from 'path';
-import { promises as fs } from 'fs';
-import * as vscode from 'vscode';
-import simpleGit from 'simple-git';
-import { AccountManager } from './accountManager';
-import { RepositoryManager } from './repositoryManager';
-import { AccountsProvider } from './treeViews/accountsProvider';
-import { RepositoriesProvider } from './treeViews/repositoriesProvider';
-import { TimelineViewProvider } from './webviews/timelineView';
-import { CommitDetailViewProvider } from './webviews/commitDetailView';
-import { TrackedRepository } from './types';
+import { iconThemeService } from "./core/services/icon-theme.service";
+import * as path from "path";
+import { promises as fs } from "fs";
+import * as vscode from "vscode";
+import simpleGit from "simple-git";
+import { AccountManager } from "./core/accounts/account-manager";
+import { RepositoryManager } from "./core/repositories/repository-manager";
+import { AccountsProvider } from "./ui/tree-views/accounts-provider";
+import { RepositoriesProvider } from "./ui/tree-views/repositories-provider";
+import { TimelineViewProvider } from "./webviews/timeline/timeline-view-provider";
+import { CommitDetailViewProvider } from "./webviews/commitDetail/commit-detail-view-provider";
+import { TrackedRepository } from "./shared/types";
 
-export async function activate(context: vscode.ExtensionContext): Promise<void> {
-  const accountManager = new AccountManager(context.globalState, context.secrets);
+export async function activate(
+  context: vscode.ExtensionContext
+): Promise<void> {
+  const accountManager = new AccountManager(
+    context.globalState,
+    context.secrets
+  );
   const repositoryManager = new RepositoryManager(context.globalState);
   await accountManager.initialize();
   await repositoryManager.initialize();
 
   const accountsProvider = new AccountsProvider(accountManager);
-  const repositoriesProvider = new RepositoriesProvider(repositoryManager, accountManager);
-  const commitDetailProvider = new CommitDetailViewProvider(context, repositoryManager);
-  const timelineProvider = new TimelineViewProvider(context, repositoryManager, commitDetailProvider);
+  const repositoriesProvider = new RepositoriesProvider(
+    repositoryManager,
+    accountManager
+  );
+  const commitDetailProvider = new CommitDetailViewProvider(
+    context,
+    repositoryManager
+  );
+  const timelineProvider = new TimelineViewProvider(
+    context,
+    repositoryManager,
+    commitDetailProvider
+  );
 
   const refreshAllViews = () => {
     void timelineProvider.refresh();
@@ -29,37 +44,55 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   };
 
   context.subscriptions.push(
-    vscode.window.registerTreeDataProvider('githubDesktop.accounts', accountsProvider),
-    vscode.window.registerTreeDataProvider('githubDesktop.repositories', repositoriesProvider),
-    vscode.window.registerWebviewViewProvider('githubDesktop.timeline', timelineProvider),
-    vscode.commands.registerCommand('githubDesktop.signIn', async () => {
+    vscode.window.registerTreeDataProvider(
+      "githubDesktop.accounts",
+      accountsProvider
+    ),
+    vscode.window.registerTreeDataProvider(
+      "githubDesktop.repositories",
+      repositoriesProvider
+    ),
+    vscode.window.registerWebviewViewProvider(
+      "githubDesktop.timeline",
+      timelineProvider
+    ),
+    vscode.commands.registerCommand("githubDesktop.signIn", async () => {
       const account = await accountManager.signIn();
       if (account) {
         await linkUnassignedRepositories(repositoryManager, account.id);
         refreshAllViews();
       }
     }),
-    vscode.commands.registerCommand('githubDesktop.signOut', () => accountManager.signOut()),
-    vscode.commands.registerCommand('githubDesktop.switchAccount', () => accountManager.switchAccount()),
-    vscode.commands.registerCommand('githubDesktop.cloneRepository', () =>
+    vscode.commands.registerCommand("githubDesktop.signOut", () =>
+      accountManager.signOut()
+    ),
+    vscode.commands.registerCommand("githubDesktop.switchAccount", () =>
+      accountManager.switchAccount()
+    ),
+    vscode.commands.registerCommand("githubDesktop.cloneRepository", () =>
       cloneRepository(accountManager, repositoryManager, timelineProvider)
     ),
-    vscode.commands.registerCommand('githubDesktop.openRepository', (repo?: TrackedRepository) =>
-      openRepository(repositoryManager, repo)
+    vscode.commands.registerCommand(
+      "githubDesktop.openRepository",
+      (repo?: TrackedRepository) => openRepository(repositoryManager, repo)
     ),
-    vscode.commands.registerCommand('githubDesktop.createIssue', () =>
+    vscode.commands.registerCommand("githubDesktop.createIssue", () =>
       createIssue(accountManager, repositoryManager)
     ),
-    vscode.commands.registerCommand('githubDesktop.refreshViews', () => refreshAllViews()),
-    vscode.workspace.onDidSaveTextDocument(() => void timelineProvider.refresh()),
+    vscode.commands.registerCommand("githubDesktop.refreshViews", () =>
+      refreshAllViews()
+    ),
+    vscode.workspace.onDidSaveTextDocument(
+      () => void timelineProvider.refresh()
+    ),
     vscode.workspace.onDidChangeWorkspaceFolders(async () => {
       await syncWorkspaceRepositories(accountManager, repositoryManager);
       refreshAllViews();
     })
   );
 
-  void vscode.commands.executeCommand('workbench.view.extension.githubDesktop');
-  void vscode.commands.executeCommand('githubDesktop.accounts.focus');
+  void vscode.commands.executeCommand("workbench.view.extension.githubDesktop");
+  void vscode.commands.executeCommand("githubDesktop.accounts.focus");
 
   await syncWorkspaceRepositories(accountManager, repositoryManager);
   refreshAllViews();
@@ -85,9 +118,9 @@ async function cloneRepository(
   }
 
   const repoInput = await vscode.window.showInputBox({
-    prompt: 'Enter a repository URL or owner/name',
-    placeHolder: 'owner/name or https://github.com/owner/name',
-    ignoreFocusOut: true
+    prompt: "Enter a repository URL or owner/name",
+    placeHolder: "owner/name or https://github.com/owner/name",
+    ignoreFocusOut: true,
   });
 
   if (!repoInput) {
@@ -96,7 +129,9 @@ async function cloneRepository(
 
   const parsed = parseRepositoryIdentifier(repoInput.trim());
   if (!parsed) {
-    vscode.window.showErrorMessage('Could not parse the repository identifier.');
+    vscode.window.showErrorMessage(
+      "Could not parse the repository identifier."
+    );
     return;
   }
 
@@ -104,7 +139,7 @@ async function cloneRepository(
     canSelectFiles: false,
     canSelectFolders: true,
     canSelectMany: false,
-    openLabel: 'Select destination folder'
+    openLabel: "Select destination folder",
   });
   if (!folderSelection || folderSelection.length === 0) {
     return;
@@ -116,10 +151,10 @@ async function cloneRepository(
     const overwrite = await vscode.window.showWarningMessage(
       `The folder ${parsed.name} already exists. Overwrite?`,
       { modal: true },
-      'Overwrite',
-      'Cancel'
+      "Overwrite",
+      "Cancel"
     );
-    if (overwrite !== 'Overwrite') {
+    if (overwrite !== "Overwrite") {
       return;
     }
     await fs.rm(targetPath, { recursive: true, force: true });
@@ -131,20 +166,25 @@ async function cloneRepository(
   }
 
   const encodedUser = encodeURIComponent(account.login);
-  const remoteWithToken = `https://${encodedUser}:${encodeURIComponent(token)}@github.com/${parsed.owner}/${parsed.name}.git`;
+  const remoteWithToken = `https://${encodedUser}:${encodeURIComponent(
+    token
+  )}@github.com/${parsed.owner}/${parsed.name}.git`;
   const cleanRemote = `https://github.com/${parsed.owner}/${parsed.name}.git`;
 
   const git = simpleGit();
-  const progress = vscode.window.withProgress({
-    location: vscode.ProgressLocation.Notification,
-    title: `Cloning ${parsed.owner}/${parsed.name}`,
-    cancellable: false
-  }, async (progressState) => {
-    progressState.report({ message: 'Fetching repository data...' });
-    await git.clone(remoteWithToken, targetPath, ['--progress']);
-    const repoGit = simpleGit(targetPath);
-    await repoGit.remote(['set-url', 'origin', cleanRemote]);
-  });
+  const progress = vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: `Cloning ${parsed.owner}/${parsed.name}`,
+      cancellable: false,
+    },
+    async (progressState) => {
+      progressState.report({ message: "Fetching repository data..." });
+      await git.clone(remoteWithToken, targetPath, ["--progress"]);
+      const repoGit = simpleGit(targetPath);
+      await repoGit.remote(["set-url", "origin", cleanRemote]);
+    }
+  );
 
   try {
     await progress;
@@ -153,15 +193,19 @@ async function cloneRepository(
       localPath: targetPath,
       owner: parsed.owner,
       name: parsed.name,
-      remoteUrl: cleanRemote
+      remoteUrl: cleanRemote,
     });
     await timeline.refresh();
-    vscode.window.showInformationMessage(`Cloned ${parsed.owner}/${parsed.name} successfully.`);
+    vscode.window.showInformationMessage(
+      `Cloned ${parsed.owner}/${parsed.name} successfully.`
+    );
   } catch (error) {
     if (error instanceof Error) {
-      vscode.window.showErrorMessage(`Failed to clone repository: ${error.message}`);
+      vscode.window.showErrorMessage(
+        `Failed to clone repository: ${error.message}`
+      );
     } else {
-      vscode.window.showErrorMessage('Failed to clone repository.');
+      vscode.window.showErrorMessage("Failed to clone repository.");
     }
   }
 }
@@ -180,7 +224,9 @@ async function openRepository(
   }
 
   const uri = vscode.Uri.file(repo.localPath);
-  await vscode.commands.executeCommand('vscode.openFolder', uri, { forceNewWindow: false });
+  await vscode.commands.executeCommand("vscode.openFolder", uri, {
+    forceNewWindow: false,
+  });
 }
 
 async function createIssue(
@@ -189,7 +235,7 @@ async function createIssue(
 ): Promise<void> {
   const repo = await pickRepository(repositories);
   if (!repo) {
-    vscode.window.showInformationMessage('Select or clone a repository first.');
+    vscode.window.showInformationMessage("Select or clone a repository first.");
     return;
   }
 
@@ -210,17 +256,17 @@ async function createIssue(
   }
 
   const title = await vscode.window.showInputBox({
-    prompt: 'Issue title',
-    ignoreFocusOut: true
+    prompt: "Issue title",
+    ignoreFocusOut: true,
   });
   if (!title) {
     return;
   }
 
   const body = await vscode.window.showInputBox({
-    prompt: 'Issue description (optional)',
+    prompt: "Issue description (optional)",
     ignoreFocusOut: true,
-    value: ''
+    value: "",
   });
 
   try {
@@ -228,22 +274,28 @@ async function createIssue(
       owner: repo.owner,
       repo: repo.name,
       title,
-      body: body ?? undefined
+      body: body ?? undefined,
     });
-    vscode.window.showInformationMessage(`Issue created: ${response.data.title}`);
+    vscode.window.showInformationMessage(
+      `Issue created: ${response.data.title}`
+    );
   } catch (error) {
     if (error instanceof Error) {
-      vscode.window.showErrorMessage(`Failed to create issue: ${error.message}`);
+      vscode.window.showErrorMessage(
+        `Failed to create issue: ${error.message}`
+      );
     } else {
-      vscode.window.showErrorMessage('Failed to create issue.');
+      vscode.window.showErrorMessage("Failed to create issue.");
     }
   }
 }
 
-function parseRepositoryIdentifier(input: string): { owner: string; name: string } | undefined {
+function parseRepositoryIdentifier(
+  input: string
+): { owner: string; name: string } | undefined {
   const patterns = [
     /github.com[/:]([^/]+)\/([^/]+?)(?:\.git)?$/i,
-    /^([^/]+)\/([^/]+)$/
+    /^([^/]+)\/([^/]+)$/,
   ];
 
   for (const pattern of patterns) {
@@ -267,11 +319,11 @@ async function pickRepository(
     repos.map((repo) => ({
       label: `${repo.owner}/${repo.name}`,
       description: repo.localPath,
-      repo
+      repo,
     })),
     {
-      placeHolder: 'Select a repository',
-      ignoreFocusOut: true
+      placeHolder: "Select a repository",
+      ignoreFocusOut: true,
     }
   );
   return selection?.repo;
@@ -297,7 +349,7 @@ async function syncWorkspaceRepositories(
       continue;
     }
 
-    if (!(await exists(path.join(localPath, '.git')))) {
+    if (!(await exists(path.join(localPath, ".git")))) {
       continue;
     }
 
@@ -311,16 +363,19 @@ async function syncWorkspaceRepositories(
       owner: metadata.owner,
       name: metadata.name,
       remoteUrl: metadata.remoteUrl,
-      accountId: accounts.getActiveAccount()?.id
+      accountId: accounts.getActiveAccount()?.id,
     });
   }
 }
 
-async function detectRepositoryMetadata(localPath: string): Promise<{ owner: string; name: string; remoteUrl?: string }> {
+async function detectRepositoryMetadata(
+  localPath: string
+): Promise<{ owner: string; name: string; remoteUrl?: string }> {
   try {
     const git = simpleGit(localPath);
     const remotes = await git.getRemotes(true);
-    const origin = remotes.find((remote) => remote.name === 'origin') ?? remotes[0];
+    const origin =
+      remotes.find((remote) => remote.name === "origin") ?? remotes[0];
     const remoteUrl = origin?.refs.fetch ?? origin?.refs.push;
     if (remoteUrl) {
       const parsed = parseRepositoryIdentifier(remoteUrl);
@@ -333,7 +388,7 @@ async function detectRepositoryMetadata(localPath: string): Promise<{ owner: str
   }
 
   const folderName = path.basename(localPath);
-  return { owner: 'local', name: folderName };
+  return { owner: "local", name: folderName };
 }
 
 async function linkUnassignedRepositories(
@@ -346,4 +401,3 @@ async function linkUnassignedRepositories(
     await repositories.updateRepository(repo.id, { accountId });
   }
 }
-

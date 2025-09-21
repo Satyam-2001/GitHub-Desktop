@@ -1,6 +1,6 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { RepositoryManager } from '../repositoryManager';
+import { RepositoryManager } from '../../core/repositories/repository-manager';
 import { TrackedRepository } from '../types';
 
 export function getPrimaryRepository(repositoryManager: RepositoryManager): TrackedRepository | undefined {
