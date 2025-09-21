@@ -10,9 +10,6 @@ import {
   ListItemIcon,
   Checkbox,
   IconButton,
-  Select,
-  MenuItem,
-  FormControl,
   Divider,
   Chip,
 } from '@mui/material';
@@ -20,17 +17,17 @@ import {
   Refresh as RefreshIcon,
   CloudUpload as PushIcon,
   CloudDownload as PullIcon,
-  AccountTree as BranchIcon,
-  KeyboardArrowDown as ArrowDownIcon,
   Add as AddIcon,
   Remove as RemoveIcon,
 } from '@mui/icons-material';
 import { VSCodeBridge, GitChange, GitCommit, Repository } from '../bridge';
+import { BranchDropdown } from './BranchDropdown';
 
 interface TimelineProps {
   changes: GitChange[];
   history: GitCommit[];
   branches: string[];
+  branchActivity: Record<string, string>;
   currentBranch: string | null;
   repository: Repository | null;
   bridge: VSCodeBridge;
@@ -40,6 +37,7 @@ export const Timeline: React.FC<TimelineProps> = ({
   changes,
   history,
   branches,
+  branchActivity,
   currentBranch,
   repository,
   bridge,
@@ -91,9 +89,6 @@ export const Timeline: React.FC<TimelineProps> = ({
     bridge.sendMessage('refresh');
   };
 
-  const handleBranchChange = (newBranch: string) => {
-    bridge.sendMessage('checkoutBranch', { branch: newBranch });
-  };
 
   const stagedChanges = changes.filter(c => c.staged);
   const unstagedChanges = changes.filter(c => !c.staged);
@@ -120,42 +115,18 @@ export const Timeline: React.FC<TimelineProps> = ({
     }}>
       {/* Header */}
       <Box sx={{
-        p: 2,
+        px: 0,
+        py: 2,
         borderBottom: '1px solid var(--vscode-sideBarSectionHeader-border)',
         bgcolor: 'var(--vscode-sideBar-background)'
       }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <BranchIcon sx={{ fontSize: 18, mr: 1, color: 'var(--vscode-foreground)' }} />
-          <FormControl size="small" sx={{ minWidth: 140, mr: 1 }}>
-            <Select
-              value={currentBranch || ''}
-              onChange={(e) => handleBranchChange(e.target.value)}
-              displayEmpty
-              variant="standard"
-              disableUnderline
-              sx={{
-                color: 'var(--vscode-foreground)',
-                fontSize: '14px',
-                fontWeight: 500,
-                '& .MuiSelect-select': {
-                  py: 0,
-                  pr: '20px !important'
-                },
-                '& .MuiSelect-icon': {
-                  color: 'var(--vscode-foreground)'
-                }
-              }}
-            >
-              <MenuItem value="" disabled sx={{ fontSize: '14px' }}>
-                No branch
-              </MenuItem>
-              {branches.map((branch) => (
-                <MenuItem key={branch} value={branch} sx={{ fontSize: '14px' }}>
-                  {branch}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, px: 2 }}>
+          <BranchDropdown
+            currentBranch={currentBranch}
+            branches={branches}
+            branchActivity={branchActivity}
+            bridge={bridge}
+          />
           <IconButton
             onClick={handleRefresh}
             size="small"
@@ -173,7 +144,8 @@ export const Timeline: React.FC<TimelineProps> = ({
 
         <Typography variant="body2" sx={{
           color: 'var(--vscode-descriptionForeground)',
-          fontSize: '12px'
+          fontSize: '12px',
+          px: 2
         }}>
           {repository?.name || 'No repository'}
         </Typography>
@@ -189,7 +161,7 @@ export const Timeline: React.FC<TimelineProps> = ({
           sx={{
             flex: 1,
             py: 1.5,
-            px: 2,
+            px: 0,
             color: activeTab === 'changes' ? 'var(--vscode-foreground)' : 'var(--vscode-descriptionForeground)',
             borderBottom: activeTab === 'changes' ? '2px solid var(--vscode-focusBorder)' : 'none',
             borderRadius: 0,
@@ -208,7 +180,7 @@ export const Timeline: React.FC<TimelineProps> = ({
           sx={{
             flex: 1,
             py: 1.5,
-            px: 2,
+            px: 0,
             color: activeTab === 'history' ? 'var(--vscode-foreground)' : 'var(--vscode-descriptionForeground)',
             borderBottom: activeTab === 'history' ? '2px solid var(--vscode-focusBorder)' : 'none',
             borderRadius: 0,
@@ -233,7 +205,8 @@ export const Timeline: React.FC<TimelineProps> = ({
               {stagedChanges.length > 0 && (
                 <Box>
                   <Box sx={{
-                    p: 2,
+                    px: 2,
+                    py: 1.5,
                     pb: 1,
                     display: 'flex',
                     alignItems: 'center',
@@ -269,7 +242,7 @@ export const Timeline: React.FC<TimelineProps> = ({
                         key={change.path}
                         sx={{
                           py: 0.75,
-                          px: 2,
+                          px: 0,
                           cursor: 'pointer',
                           '&:hover': {
                             bgcolor: 'var(--vscode-list-hoverBackground)'
@@ -277,7 +250,7 @@ export const Timeline: React.FC<TimelineProps> = ({
                         }}
                         onClick={() => handleFileToggle(change.path)}
                       >
-                        <ListItemIcon sx={{ minWidth: 24 }}>
+                        <ListItemIcon sx={{ minWidth: 24, ml: 2 }}>
                           <Checkbox
                             checked={selectedFiles.has(change.path)}
                             size="small"
@@ -323,7 +296,8 @@ export const Timeline: React.FC<TimelineProps> = ({
               {unstagedChanges.length > 0 && (
                 <Box>
                   <Box sx={{
-                    p: 2,
+                    px: 2,
+                    py: 1.5,
                     pb: 1,
                     display: 'flex',
                     alignItems: 'center',
@@ -359,7 +333,7 @@ export const Timeline: React.FC<TimelineProps> = ({
                         key={change.path}
                         sx={{
                           py: 0.75,
-                          px: 2,
+                          px: 0,
                           cursor: 'pointer',
                           '&:hover': {
                             bgcolor: 'var(--vscode-list-hoverBackground)'
@@ -367,7 +341,7 @@ export const Timeline: React.FC<TimelineProps> = ({
                         }}
                         onClick={() => handleFileToggle(change.path)}
                       >
-                        <ListItemIcon sx={{ minWidth: 24 }}>
+                        <ListItemIcon sx={{ minWidth: 24, ml: 2 }}>
                           <Checkbox
                             checked={selectedFiles.has(change.path)}
                             size="small"
@@ -431,7 +405,8 @@ export const Timeline: React.FC<TimelineProps> = ({
             {/* Commit Section - Only shown in changes tab */}
             {stagedChanges.length > 0 && (
               <Box sx={{
-                p: 2,
+                px: 2,
+                py: 2,
                 borderTop: '1px solid var(--vscode-sideBarSectionHeader-border)',
                 bgcolor: 'var(--vscode-sideBar-background)'
               }}>

@@ -13,6 +13,7 @@ const queryClient = new QueryClient();
 
 export const App: React.FC<AppProps> = ({ bridge, initialState }) => {
   const [state, setState] = useState(initialState);
+  const [branchActivity, setBranchActivity] = useState<Record<string, string>>({});
 
   useEffect(() => {
     bridge.onMessage((message) => {
@@ -29,6 +30,9 @@ export const App: React.FC<AppProps> = ({ bridge, initialState }) => {
             branches: message.branches,
             currentBranch: message.currentBranch,
           }));
+          if (message.branchActivity) {
+            setBranchActivity(message.branchActivity);
+          }
           break;
         case 'updateRepository':
           setState((prev) => ({ ...prev, repository: message.repository }));
@@ -75,6 +79,7 @@ export const App: React.FC<AppProps> = ({ bridge, initialState }) => {
           changes={state.changes}
           history={state.history}
           branches={state.branches}
+          branchActivity={branchActivity}
           currentBranch={state.currentBranch}
           repository={state.repository}
           bridge={bridge}

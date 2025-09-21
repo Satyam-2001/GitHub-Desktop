@@ -76,6 +76,12 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
         case 'checkoutBranch':
           await this.checkoutBranch(message.branch);
           break;
+        case 'mergeBranch':
+          await this.mergeBranch(message.fromBranch, message.toBranch);
+          break;
+        case 'createPullRequest':
+          await this.createPullRequest(message.branch);
+          break;
         case 'selectCommit':
           if (typeof message.hash === 'string') {
             await this.postCommitDetail(message.hash);
@@ -133,6 +139,17 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
 
       const branch = await git.branch();
 
+      // Get branch activity dates
+      const branchActivity: Record<string, string> = {};
+      for (const branchName of branch.all) {
+        try {
+          const lastCommit = await git.raw(['log', '-1', '--format=%cr', branchName]);
+          branchActivity[branchName] = lastCommit.trim();
+        } catch (error) {
+          // If we can't get the date, skip it
+        }
+      }
+
       this.view.webview.postMessage({
         command: 'updateChanges',
         changes
@@ -146,7 +163,8 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
       this.view.webview.postMessage({
         command: 'updateBranches',
         branches: branch.all,
-        currentBranch: branch.current
+        currentBranch: branch.current,
+        branchActivity
       });
 
       this.view.webview.postMessage({
@@ -411,6 +429,51 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
     }
   }
 
+  private async mergeBranch(fromBranch: string, toBranch: string): Promise<void> {
+    const repository = getPrimaryRepository(this.repositories);
+    if (!repository || !fromBranch || !toBranch) return;
+
+    try {
+      const git = simpleGit(repository.localPath);
+
+      // Ensure we're on the target branch
+      await git.checkout(toBranch);
+
+      // Perform the merge
+      await git.merge([fromBranch]);
+
+      await this.postState();
+      vscode.window.showInformationMessage(`Successfully merged ${fromBranch} into ${toBranch}`);
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to merge branches: ${error}`);
+    }
+  }
+
+  private async createPullRequest(branchName: string): Promise<void> {
+    const repository = getPrimaryRepository(this.repositories);
+    if (!repository || !branchName) return;
+
+    try {
+      // For now, we'll open the GitHub PR creation page
+      // In a real implementation, you'd use the GitHub API
+      const repoUrl = repository.remoteUrl;
+      if (repoUrl) {
+        // Extract GitHub URL from git remote
+        const githubUrl = repoUrl
+          .replace(/^git@github\.com:/, 'https://github.com/')
+          .replace(/\.git$/, '');
+
+        const prUrl = `${githubUrl}/compare/${branchName}?expand=1`;
+        vscode.env.openExternal(vscode.Uri.parse(prUrl));
+        vscode.window.showInformationMessage(`Opening pull request creation for ${branchName}`);
+      } else {
+        vscode.window.showWarningMessage('No remote repository configured');
+      }
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to create pull request: ${error}`);
+    }
+  }
+
   private getHtml(webview: vscode.Webview): string {
     const reactAppUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.context.extensionUri, 'out', 'webview', 'index.js')
@@ -439,16 +502,28 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource} 'unsafe-inline';">
     <title>GitHub Desktop Timeline</title>
     <style>
-        body.vscode-body {
+        * {
             margin: 0;
-            background-color: var(--vscode-editor-background);
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--vscode-sideBar-background);
             color: var(--vscode-foreground);
             color-scheme: light dark;
-            font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-            transition: background-color 120ms ease, color 120ms ease;
+            font-family: var(--vscode-font-family, "Segoe UI", system-ui, -apple-system, sans-serif);
+            font-size: var(--vscode-font-size, 13px);
+            overflow: hidden;
         }
-        *, *::before, *::after {
-            box-sizing: border-box;
+        #root {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
         }
     </style>
 </head>
