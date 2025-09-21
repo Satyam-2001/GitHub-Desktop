@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-} from '@mui/material';
+} from "@mui/material";
 import {
   AccountTree as BranchIcon,
   KeyboardArrowDown as ArrowDownIcon,
@@ -24,8 +24,8 @@ import {
   MergeType as MergeIcon,
   GitHub as PRIcon,
   Close as CloseIcon,
-} from '@mui/icons-material';
-import { VSCodeBridge } from '../bridge';
+} from "@mui/icons-material";
+import { VSCodeBridge } from "../bridge";
 
 interface BranchDropdownProps {
   currentBranch: string | null;
@@ -47,17 +47,19 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
   bridge,
 }) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
-  const [mergeSearchTerm, setMergeSearchTerm] = useState('');
-  const [selectedMergeBranch, setSelectedMergeBranch] = useState<string | null>(null);
-  const buttonRef = useRef<HTMLElement>(null);
+  const [mergeSearchTerm, setMergeSearchTerm] = useState("");
+  const [selectedMergeBranch, setSelectedMergeBranch] = useState<string | null>(
+    null
+  );
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const open = Boolean(anchorEl);
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
-    setSearchTerm('');
+    setSearchTerm("");
   };
 
   const handleClose = () => {
@@ -66,14 +68,14 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
 
   const handleBranchSelect = (branch: string) => {
     if (branch !== currentBranch) {
-      bridge.sendMessage('checkoutBranch', { branch });
+      bridge.sendMessage("checkoutBranch", { branch });
     }
     handleClose();
   };
 
   const handleMergeDialogOpen = () => {
     setMergeDialogOpen(true);
-    setMergeSearchTerm('');
+    setMergeSearchTerm("");
     setSelectedMergeBranch(null);
     handleClose();
   };
@@ -81,14 +83,14 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
   const handleMergeDialogClose = () => {
     setMergeDialogOpen(false);
     setSelectedMergeBranch(null);
-    setMergeSearchTerm('');
+    setMergeSearchTerm("");
   };
 
   const handleMerge = () => {
     if (selectedMergeBranch && currentBranch) {
-      bridge.sendMessage('mergeBranch', {
+      bridge.sendMessage("mergeBranch", {
         fromBranch: selectedMergeBranch,
-        toBranch: currentBranch
+        toBranch: currentBranch,
       });
       handleMergeDialogClose();
     }
@@ -96,25 +98,25 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
 
   const handleCreatePR = () => {
     if (currentBranch) {
-      bridge.sendMessage('createPullRequest', { branch: currentBranch });
+      bridge.sendMessage("createPullRequest", { branch: currentBranch });
     }
     handleClose();
   };
 
   // Group branches
   const groupBranches = (): BranchGroups => {
-    const defaultBranches = branches.filter(branch =>
-      ['main', 'master', 'develop', 'dev'].includes(branch.toLowerCase())
+    const defaultBranches = branches.filter((branch) =>
+      ["main", "master", "develop", "dev"].includes(branch.toLowerCase())
     );
 
-    const nonDefaultBranches = branches.filter(branch =>
-      !defaultBranches.includes(branch) && branch !== currentBranch
+    const nonDefaultBranches = branches.filter(
+      (branch) => !defaultBranches.includes(branch) && branch !== currentBranch
     );
 
     // Sort by activity date for recent branches
     const sortedByActivity = nonDefaultBranches.sort((a, b) => {
-      const aActivity = branchActivity[a] || '';
-      const bActivity = branchActivity[b] || '';
+      const aActivity = branchActivity[a] || "";
+      const bActivity = branchActivity[b] || "";
       return aActivity.localeCompare(bActivity);
     });
 
@@ -131,7 +133,7 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
   const filteredBranches = () => {
     if (!searchTerm) return groupBranches();
 
-    const filtered = branches.filter(branch =>
+    const filtered = branches.filter((branch) =>
       branch.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -143,15 +145,20 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
   };
 
   const filteredMergeBranches = () => {
-    return branches.filter(branch =>
-      branch !== currentBranch &&
-      branch.toLowerCase().includes(mergeSearchTerm.toLowerCase())
+    return branches.filter(
+      (branch) =>
+        branch !== currentBranch &&
+        branch.toLowerCase().includes(mergeSearchTerm.toLowerCase())
     );
   };
 
   const branchGroups = filteredBranches();
 
-  const renderBranchGroup = (title: string, branches: string[], showDivider: boolean = true) => {
+  const renderBranchGroup = (
+    title: string,
+    branches: string[],
+    showDivider: boolean = true
+  ) => {
     if (branches.length === 0) return null;
 
     return (
@@ -161,7 +168,7 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
             sx={{
               my: 0.5,
               mx: 1,
-              borderColor: 'var(--vscode-sideBarSectionHeader-border)',
+              borderColor: "var(--vscode-sideBarSectionHeader-border)",
             }}
           />
         )}
@@ -170,13 +177,13 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
           sx={{
             px: 2,
             py: 0.5,
-            display: 'block',
-            color: 'var(--vscode-descriptionForeground)',
-            fontSize: '11px',
+            display: "block",
+            color: "var(--vscode-descriptionForeground)",
+            fontSize: "11px",
             fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            bgcolor: 'var(--vscode-sideBar-background)',
+            textTransform: "uppercase",
+            letterSpacing: "0.5px",
+            bgcolor: "var(--vscode-sideBar-background)",
           }}
         >
           {title}
@@ -187,11 +194,11 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
             sx={{
               py: 0.5,
               px: 2,
-              cursor: 'pointer',
-              minHeight: 'auto',
-              bgcolor: 'var(--vscode-sideBar-background)',
-              '&:hover': {
-                bgcolor: 'var(--vscode-list-hoverBackground)',
+              cursor: "pointer",
+              minHeight: "auto",
+              bgcolor: "var(--vscode-sideBar-background)",
+              "&:hover": {
+                bgcolor: "var(--vscode-list-hoverBackground)",
               },
             }}
             onClick={() => handleBranchSelect(branch)}
@@ -200,17 +207,23 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
               <BranchIcon
                 sx={{
                   fontSize: 14,
-                  color: 'var(--vscode-descriptionForeground)',
+                  color: "var(--vscode-descriptionForeground)",
                 }}
               />
             </ListItemIcon>
             <ListItemText
               primary={
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
                   <Typography
                     sx={{
-                      fontSize: '13px',
-                      color: 'var(--vscode-foreground)',
+                      fontSize: "13px",
+                      color: "var(--vscode-foreground)",
                     }}
                   >
                     {branch}
@@ -218,8 +231,8 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
                   {branchActivity[branch] && (
                     <Typography
                       sx={{
-                        fontSize: '11px',
-                        color: 'var(--vscode-descriptionForeground)',
+                        fontSize: "11px",
+                        color: "var(--vscode-descriptionForeground)",
                         ml: 1,
                       }}
                     >
@@ -242,41 +255,41 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
         onClick={handleClick}
         sx={{
           minWidth: 140,
-          justifyContent: 'space-between',
-          color: 'var(--vscode-foreground)',
-          fontSize: '14px',
+          justifyContent: "space-between",
+          color: "var(--vscode-foreground)",
+          fontSize: "14px",
           fontWeight: 500,
-          textTransform: 'none',
+          textTransform: "none",
           px: 1,
           py: 0.5,
-          bgcolor: 'var(--vscode-sideBar-background)',
-          '&:hover': {
-            bgcolor: 'var(--vscode-list-hoverBackground)',
+          bgcolor: "var(--vscode-sideBar-background)",
+          "&:hover": {
+            bgcolor: "var(--vscode-list-hoverBackground)",
           },
         }}
         endIcon={
           <ArrowDownIcon
             sx={{
               fontSize: 16,
-              color: 'var(--vscode-foreground)',
-              transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-              transition: 'transform 0.2s ease',
+              color: "var(--vscode-foreground)",
+              transform: open ? "rotate(180deg)" : "rotate(0deg)",
+              transition: "transform 0.2s ease",
             }}
           />
         }
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+        <Box sx={{ display: "flex", alignItems: "center", overflow: "hidden" }}>
           <BranchIcon sx={{ fontSize: 16, mr: 1 }} />
           <Typography
             sx={{
-              fontSize: '14px',
+              fontSize: "14px",
               fontWeight: 500,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
             }}
           >
-            {currentBranch || 'No branch'}
+            {currentBranch || "No branch"}
           </Typography>
         </Box>
       </Button>
@@ -286,27 +299,27 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
         anchorEl={anchorEl}
         onClose={handleClose}
         anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'left',
+          vertical: "bottom",
+          horizontal: "left",
         }}
         transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
+          vertical: "top",
+          horizontal: "left",
         }}
         PaperProps={{
           sx: {
             width: 320,
             maxHeight: 450,
-            bgcolor: 'var(--vscode-sideBar-background)',
-            border: '1px solid var(--vscode-sideBarSectionHeader-border)',
+            bgcolor: "var(--vscode-sideBar-background)",
+            border: "1px solid var(--vscode-sideBarSectionHeader-border)",
             borderRadius: 1,
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
-            overflow: 'hidden',
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4)",
+            overflow: "hidden",
           },
         }}
       >
         {/* Search */}
-        <Box sx={{ p: 1.5, bgcolor: 'var(--vscode-sideBar-background)' }}>
+        <Box sx={{ p: 1.5, bgcolor: "var(--vscode-sideBar-background)" }}>
           <TextField
             fullWidth
             placeholder="Find a branch..."
@@ -319,7 +332,7 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
                   <SearchIcon
                     sx={{
                       fontSize: 16,
-                      color: 'var(--vscode-descriptionForeground)',
+                      color: "var(--vscode-descriptionForeground)",
                     }}
                   />
                 </InputAdornment>
@@ -328,31 +341,33 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
                 <InputAdornment position="end">
                   <IconButton
                     size="small"
-                    onClick={() => setSearchTerm('')}
+                    onClick={() => setSearchTerm("")}
                     sx={{ p: 0.25 }}
                   >
-                    <CloseIcon sx={{ fontSize: 14, color: 'var(--vscode-foreground)' }} />
+                    <CloseIcon
+                      sx={{ fontSize: 14, color: "var(--vscode-foreground)" }}
+                    />
                   </IconButton>
                 </InputAdornment>
               ),
             }}
             sx={{
-              '& .MuiOutlinedInput-root': {
-                bgcolor: 'var(--vscode-input-background)',
-                color: 'var(--vscode-input-foreground)',
-                fontSize: '13px',
-                '& fieldset': {
-                  borderColor: 'var(--vscode-input-border)',
+              "& .MuiOutlinedInput-root": {
+                bgcolor: "var(--vscode-input-background)",
+                color: "var(--vscode-input-foreground)",
+                fontSize: "13px",
+                "& fieldset": {
+                  borderColor: "var(--vscode-input-border)",
                 },
-                '&:hover fieldset': {
-                  borderColor: 'var(--vscode-input-border)',
+                "&:hover fieldset": {
+                  borderColor: "var(--vscode-input-border)",
                 },
-                '&.Mui-focused fieldset': {
-                  borderColor: 'var(--vscode-focusBorder)',
+                "&.Mui-focused fieldset": {
+                  borderColor: "var(--vscode-focusBorder)",
                 },
               },
-              '& .MuiInputBase-input::placeholder': {
-                color: 'var(--vscode-input-placeholderForeground)',
+              "& .MuiInputBase-input::placeholder": {
+                color: "var(--vscode-input-placeholderForeground)",
                 opacity: 1,
               },
             }}
@@ -363,20 +378,20 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
         <Box
           sx={{
             height: 280,
-            overflow: 'auto',
-            bgcolor: 'var(--vscode-sideBar-background)',
-            '&::-webkit-scrollbar': {
-              width: '8px',
+            overflow: "auto",
+            bgcolor: "var(--vscode-sideBar-background)",
+            "&::-webkit-scrollbar": {
+              width: "8px",
             },
-            '&::-webkit-scrollbar-track': {
-              background: 'var(--vscode-scrollbarSlider-background)',
+            "&::-webkit-scrollbar-track": {
+              background: "var(--vscode-scrollbarSlider-background)",
             },
-            '&::-webkit-scrollbar-thumb': {
-              background: 'var(--vscode-scrollbarSlider-background)',
-              borderRadius: '4px',
+            "&::-webkit-scrollbar-thumb": {
+              background: "var(--vscode-scrollbarSlider-background)",
+              borderRadius: "4px",
             },
-            '&::-webkit-scrollbar-thumb:hover': {
-              background: 'var(--vscode-scrollbarSlider-hoverBackground)',
+            "&::-webkit-scrollbar-thumb:hover": {
+              background: "var(--vscode-scrollbarSlider-hoverBackground)",
             },
           }}
         >
@@ -385,9 +400,9 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
               sx={{
                 py: 0.5,
                 px: 2,
-                bgcolor: 'var(--vscode-list-activeSelectionBackground)',
-                '&:hover': {
-                  bgcolor: 'var(--vscode-list-activeSelectionBackground)',
+                bgcolor: "var(--vscode-list-activeSelectionBackground)",
+                "&:hover": {
+                  bgcolor: "var(--vscode-list-activeSelectionBackground)",
                 },
               }}
             >
@@ -395,7 +410,7 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
                 <BranchIcon
                   sx={{
                     fontSize: 14,
-                    color: 'var(--vscode-list-activeSelectionForeground)',
+                    color: "var(--vscode-list-activeSelectionForeground)",
                   }}
                 />
               </ListItemIcon>
@@ -403,9 +418,9 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
                 primary={
                   <Typography
                     sx={{
-                      fontSize: '13px',
+                      fontSize: "13px",
                       fontWeight: 600,
-                      color: 'var(--vscode-list-activeSelectionForeground)',
+                      color: "var(--vscode-list-activeSelectionForeground)",
                     }}
                   >
                     {currentBranch} (current)
@@ -417,57 +432,65 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
 
           {!searchTerm && (
             <>
-              {renderBranchGroup('Default', branchGroups.default)}
-              {renderBranchGroup('Recent', branchGroups.recent)}
-              {renderBranchGroup('Other', branchGroups.other)}
+              {renderBranchGroup("Default", branchGroups.default)}
+              {renderBranchGroup("Recent", branchGroups.recent)}
+              {renderBranchGroup("Other", branchGroups.other)}
             </>
           )}
 
-          {searchTerm && renderBranchGroup('Search Results', branchGroups.other, false)}
+          {searchTerm &&
+            renderBranchGroup("Search Results", branchGroups.other, false)}
         </Box>
 
         {/* Actions */}
-        <Box sx={{ p: 1.5, bgcolor: 'var(--vscode-sideBar-background)', borderTop: '1px solid var(--vscode-sideBarSectionHeader-border)' }}>
+        <Box
+          sx={{
+            bgcolor: "var(--vscode-sideBar-background)",
+            borderTop: "1px solid var(--vscode-sideBarSectionHeader-border)",
+          }}
+        >
           <Button
             fullWidth
             startIcon={<MergeIcon sx={{ fontSize: 14 }} />}
             onClick={handleMergeDialogOpen}
             sx={{
-              justifyContent: 'flex-start',
-              color: 'var(--vscode-foreground)',
-              fontSize: '13px',
-              textTransform: 'none',
+              justifyContent: "flex-start",
+              color: "var(--vscode-foreground)",
+              fontSize: "13px",
+              textTransform: "none",
               py: 1,
-              mb: 1,
-              bgcolor: 'var(--vscode-sideBar-background)',
-              '&:hover': {
-                bgcolor: 'var(--vscode-list-hoverBackground)',
+              m: 1,
+              bgcolor: "var(--vscode-sideBar-background)",
+              "&:hover": {
+                bgcolor: "var(--vscode-list-hoverBackground)",
               },
             }}
           >
             Choose branch to merge into {currentBranch}
           </Button>
 
-          {currentBranch && currentBranch !== 'main' && currentBranch !== 'master' && (
-            <Button
-              fullWidth
-              startIcon={<PRIcon sx={{ fontSize: 14 }} />}
-              onClick={handleCreatePR}
-              sx={{
-                justifyContent: 'flex-start',
-                color: 'var(--vscode-foreground)',
-                fontSize: '13px',
-                textTransform: 'none',
-                py: 1,
-                bgcolor: 'var(--vscode-sideBar-background)',
-                '&:hover': {
-                  bgcolor: 'var(--vscode-list-hoverBackground)',
-                },
-              }}
-            >
-              Create Pull Request
-            </Button>
-          )}
+          {currentBranch &&
+            currentBranch !== "main" &&
+            currentBranch !== "master" && (
+              <Button
+                fullWidth
+                startIcon={<PRIcon sx={{ fontSize: 14 }} />}
+                onClick={handleCreatePR}
+                sx={{
+                  justifyContent: "flex-start",
+                  color: "var(--vscode-foreground)",
+                  fontSize: "13px",
+                  textTransform: "none",
+                  py: 1,
+                  bgcolor: "var(--vscode-sideBar-background)",
+                  "&:hover": {
+                    bgcolor: "var(--vscode-list-hoverBackground)",
+                  },
+                }}
+              >
+                Create Pull Request
+              </Button>
+            )}
         </Box>
       </Popover>
 
@@ -479,23 +502,25 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
         fullWidth
         PaperProps={{
           sx: {
-            bgcolor: 'var(--vscode-sideBar-background)',
-            color: 'var(--vscode-foreground)',
-            border: '1px solid var(--vscode-sideBarSectionHeader-border)',
+            bgcolor: "var(--vscode-sideBar-background)",
+            color: "var(--vscode-foreground)",
+            border: "1px solid var(--vscode-sideBarSectionHeader-border)",
           },
         }}
       >
         <DialogTitle
           sx={{
-            bgcolor: 'var(--vscode-sideBar-background)',
-            color: 'var(--vscode-foreground)',
-            fontSize: '16px',
+            bgcolor: "var(--vscode-sideBar-background)",
+            color: "var(--vscode-foreground)",
+            fontSize: "16px",
             fontWeight: 600,
           }}
         >
           Merge into {currentBranch}
         </DialogTitle>
-        <DialogContent sx={{ bgcolor: 'var(--vscode-sideBar-background)', pt: 1 }}>
+        <DialogContent
+          sx={{ bgcolor: "var(--vscode-sideBar-background)", pt: 1 }}
+        >
           <TextField
             fullWidth
             placeholder="Search branches..."
@@ -504,22 +529,22 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
             size="small"
             sx={{
               mb: 2,
-              '& .MuiOutlinedInput-root': {
-                bgcolor: 'var(--vscode-input-background)',
-                color: 'var(--vscode-input-foreground)',
-                fontSize: '13px',
-                '& fieldset': {
-                  borderColor: 'var(--vscode-input-border)',
+              "& .MuiOutlinedInput-root": {
+                bgcolor: "var(--vscode-input-background)",
+                color: "var(--vscode-input-foreground)",
+                fontSize: "13px",
+                "& fieldset": {
+                  borderColor: "var(--vscode-input-border)",
                 },
-                '&:hover fieldset': {
-                  borderColor: 'var(--vscode-input-border)',
+                "&:hover fieldset": {
+                  borderColor: "var(--vscode-input-border)",
                 },
-                '&.Mui-focused fieldset': {
-                  borderColor: 'var(--vscode-focusBorder)',
+                "&.Mui-focused fieldset": {
+                  borderColor: "var(--vscode-focusBorder)",
                 },
               },
-              '& .MuiInputBase-input::placeholder': {
-                color: 'var(--vscode-input-placeholderForeground)',
+              "& .MuiInputBase-input::placeholder": {
+                color: "var(--vscode-input-placeholderForeground)",
                 opacity: 1,
               },
             }}
@@ -527,18 +552,18 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
           <Box
             sx={{
               maxHeight: 300,
-              overflow: 'auto',
-              border: '1px solid var(--vscode-sideBarSectionHeader-border)',
+              overflow: "auto",
+              border: "1px solid var(--vscode-sideBarSectionHeader-border)",
               borderRadius: 1,
-              '&::-webkit-scrollbar': {
-                width: '8px',
+              "&::-webkit-scrollbar": {
+                width: "8px",
               },
-              '&::-webkit-scrollbar-track': {
-                background: 'var(--vscode-scrollbarSlider-background)',
+              "&::-webkit-scrollbar-track": {
+                background: "var(--vscode-scrollbarSlider-background)",
               },
-              '&::-webkit-scrollbar-thumb': {
-                background: 'var(--vscode-scrollbarSlider-background)',
-                borderRadius: '4px',
+              "&::-webkit-scrollbar-thumb": {
+                background: "var(--vscode-scrollbarSlider-background)",
+                borderRadius: "4px",
               },
             }}
           >
@@ -549,10 +574,13 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
                   sx={{
                     py: 1,
                     px: 2,
-                    cursor: 'pointer',
-                    bgcolor: selectedMergeBranch === branch ? 'var(--vscode-list-activeSelectionBackground)' : 'var(--vscode-sideBar-background)',
-                    '&:hover': {
-                      bgcolor: 'var(--vscode-list-hoverBackground)',
+                    cursor: "pointer",
+                    bgcolor:
+                      selectedMergeBranch === branch
+                        ? "var(--vscode-list-activeSelectionBackground)"
+                        : "var(--vscode-sideBar-background)",
+                    "&:hover": {
+                      bgcolor: "var(--vscode-list-hoverBackground)",
                     },
                   }}
                   onClick={() => setSelectedMergeBranch(branch)}
@@ -561,17 +589,26 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
                     <BranchIcon
                       sx={{
                         fontSize: 14,
-                        color: 'var(--vscode-descriptionForeground)',
+                        color: "var(--vscode-descriptionForeground)",
                       }}
                     />
                   </ListItemIcon>
                   <ListItemText
                     primary={
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
                         <Typography
                           sx={{
-                            fontSize: '13px',
-                            color: selectedMergeBranch === branch ? 'var(--vscode-list-activeSelectionForeground)' : 'var(--vscode-foreground)',
+                            fontSize: "13px",
+                            color:
+                              selectedMergeBranch === branch
+                                ? "var(--vscode-list-activeSelectionForeground)"
+                                : "var(--vscode-foreground)",
                           }}
                         >
                           {branch}
@@ -579,8 +616,8 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
                         {branchActivity[branch] && (
                           <Typography
                             sx={{
-                              fontSize: '11px',
-                              color: 'var(--vscode-descriptionForeground)',
+                              fontSize: "11px",
+                              color: "var(--vscode-descriptionForeground)",
                               ml: 1,
                             }}
                           >
@@ -595,15 +632,17 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
             </List>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ bgcolor: 'var(--vscode-sideBar-background)', gap: 1 }}>
+        <DialogActions
+          sx={{ bgcolor: "var(--vscode-sideBar-background)", gap: 1 }}
+        >
           <Button
             onClick={handleMergeDialogClose}
             sx={{
-              color: 'var(--vscode-foreground)',
-              fontSize: '13px',
-              textTransform: 'none',
-              '&:hover': {
-                bgcolor: 'var(--vscode-list-hoverBackground)',
+              color: "var(--vscode-foreground)",
+              fontSize: "13px",
+              textTransform: "none",
+              "&:hover": {
+                bgcolor: "var(--vscode-list-hoverBackground)",
               },
             }}
           >
@@ -614,22 +653,22 @@ export const BranchDropdown: React.FC<BranchDropdownProps> = ({
             disabled={!selectedMergeBranch}
             variant="contained"
             sx={{
-              bgcolor: 'var(--vscode-button-background)',
-              color: 'var(--vscode-button-foreground)',
-              fontSize: '13px',
-              textTransform: 'none',
-              boxShadow: 'none',
-              '&:hover': {
-                bgcolor: 'var(--vscode-button-hoverBackground)',
-                boxShadow: 'none',
+              bgcolor: "var(--vscode-button-background)",
+              color: "var(--vscode-button-foreground)",
+              fontSize: "13px",
+              textTransform: "none",
+              boxShadow: "none",
+              "&:hover": {
+                bgcolor: "var(--vscode-button-hoverBackground)",
+                boxShadow: "none",
               },
-              '&:disabled': {
-                bgcolor: 'var(--vscode-button-secondaryBackground)',
-                color: 'var(--vscode-button-secondaryForeground)',
+              "&:disabled": {
+                bgcolor: "var(--vscode-button-secondaryBackground)",
+                color: "var(--vscode-button-secondaryForeground)",
               },
             }}
           >
-            Merge {selectedMergeBranch || 'branch'}
+            Merge {selectedMergeBranch || "branch"}
           </Button>
         </DialogActions>
       </Dialog>

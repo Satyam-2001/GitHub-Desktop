@@ -539,8 +539,8 @@ export const Timeline: React.FC<TimelineProps> = ({
                   <ListItem
                     key={commit.hash}
                     sx={{
-                      py: 1.5,
-                      px: 2,
+                      py: 1,
+                      px: 1.5,
                       borderBottom: '1px solid var(--vscode-sideBarSectionHeader-border)',
                       cursor: 'pointer',
                       bgcolor: selectedCommit?.hash === commit.hash ? 'var(--vscode-list-activeSelectionBackground)' : 'transparent',
@@ -550,20 +550,8 @@ export const Timeline: React.FC<TimelineProps> = ({
                     }}
                     onClick={() => handleCommitSelect(commit)}
                   >
-                    <ListItemIcon sx={{ minWidth: 32, mr: 1 }}>
-                      <Avatar
-                        src={generateAvatarUrl(commit.email || '', commit.author)}
-                        sx={{
-                          width: 24,
-                          height: 24,
-                          fontSize: '11px',
-                          bgcolor: 'var(--vscode-button-background)',
-                        }}
-                      >
-                        {commit.author.charAt(0).toUpperCase()}
-                      </Avatar>
-                    </ListItemIcon>
                     <ListItemText
+                      sx={{ pl: 1 }}
                       primary={
                         <Typography sx={{
                           fontSize: '13px',
@@ -577,6 +565,17 @@ export const Timeline: React.FC<TimelineProps> = ({
                       }
                       secondary={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                          <Avatar
+                            src={generateAvatarUrl(commit.email || '', commit.author)}
+                            sx={{
+                              width: 20,
+                              height: 20,
+                              fontSize: '10px',
+                              bgcolor: 'var(--vscode-button-background)',
+                            }}
+                          >
+                            {commit.author.charAt(0).toUpperCase()}
+                          </Avatar>
                           <Typography sx={{
                             fontSize: '12px',
                             color: 'var(--vscode-descriptionForeground)',

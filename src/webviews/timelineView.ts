@@ -572,24 +572,56 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
     try {
       const git = simpleGit(repository.localPath);
 
-      // Get the diff for the specific file
-      const diff = await git.raw(['show', hash, '--', filePath]);
+      // Create temporary files for diff comparison
+      const tempDir = vscode.Uri.joinPath(this.context.globalStorageUri, 'temp');
+      await vscode.workspace.fs.createDirectory(tempDir);
 
-      this.view?.webview.postMessage({
-        command: 'fileDiff',
-        filePath,
-        diff
-      });
+      // Get the current version of the file (if it exists)
+      const currentFilePath = vscode.Uri.file(path.join(repository.localPath, filePath));
+      let currentExists = false;
+      try {
+        await vscode.workspace.fs.stat(currentFilePath);
+        currentExists = true;
+      } catch {
+        // File doesn't exist in current working directory
+      }
+
+      // Get the file content from the commit
+      let oldContent = '';
+      try {
+        oldContent = await git.raw(['show', `${hash}^:${filePath}`]);
+      } catch {
+        // File didn't exist in parent commit (newly added)
+      }
+
+      let newContent = '';
+      try {
+        newContent = await git.raw(['show', `${hash}:${filePath}`]);
+      } catch {
+        // File was deleted in this commit
+      }
+
+      // Create temporary files
+      const oldTempFile = vscode.Uri.joinPath(tempDir, `${hash}-old-${path.basename(filePath)}`);
+      const newTempFile = vscode.Uri.joinPath(tempDir, `${hash}-new-${path.basename(filePath)}`);
+
+      await vscode.workspace.fs.writeFile(oldTempFile, Buffer.from(oldContent, 'utf8'));
+      await vscode.workspace.fs.writeFile(newTempFile, Buffer.from(newContent, 'utf8'));
+
+      // Open diff in VS Code editor
+      const title = `${path.basename(filePath)} (${hash.substring(0, 7)})`;
+      await vscode.commands.executeCommand(
+        'vscode.diff',
+        oldTempFile,
+        newTempFile,
+        title
+      );
+
+      // Show success message
+      vscode.window.showInformationMessage(`Opened diff for ${filePath}`);
 
     } catch (error) {
-      vscode.window.showErrorMessage(`Failed to get file diff: ${error}`);
-
-      // Send empty diff on error
-      this.view?.webview.postMessage({
-        command: 'fileDiff',
-        filePath,
-        diff: `Error loading diff for ${filePath}: ${error}`
-      });
+      vscode.window.showErrorMessage(`Failed to open file diff: ${error}`);
     }
   }
 
@@ -618,7 +650,7 @@ export class TimelineViewProvider implements vscode.WebviewViewProvider {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource} 'unsafe-inline';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource} 'unsafe-inline'; img-src https: data:;">
     <title>GitHub Desktop Timeline</title>
     <style>
         * {
