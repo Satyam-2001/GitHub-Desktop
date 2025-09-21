@@ -14,6 +14,7 @@ export interface InitialWebviewState {
   activeAccount: GitHubAccount | null;
   hasMoreCommits?: boolean;
   commitsOffset?: number;
+  remoteStatus?: RemoteStatus;
 }
 
 export interface GitChange {
@@ -28,6 +29,18 @@ export interface GitCommit {
   author: string;
   email?: string;
   date: string;
+  relativeTime?: string;
+  tags?: string[];
+  isPushed?: boolean;
+}
+
+export interface RemoteStatus {
+  hasRemote: boolean;
+  isPublished: boolean;
+  ahead: number;
+  behind: number;
+  lastFetched: Date | null;
+  remoteBranch: string | null;
 }
 
 export interface Repository {

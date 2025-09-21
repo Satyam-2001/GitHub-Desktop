@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material';
 import { VSCodeBridge } from '../app/bridge';
-import { CommitDetailPanel } from '../app/components/CommitDetailPanel';
+import { CommitDetailPanel } from '../app/components/CommitDetailPanel/CommitDetailPanel';
 
 interface CommitDetail {
   hash: string;

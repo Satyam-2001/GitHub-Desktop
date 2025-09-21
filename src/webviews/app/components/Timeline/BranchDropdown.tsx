@@ -25,7 +25,7 @@ import {
   GitHub as PRIcon,
   Close as CloseIcon,
 } from "@mui/icons-material";
-import { VSCodeBridge } from "../bridge";
+import { VSCodeBridge } from "../../bridge";
 
 interface BranchDropdownProps {
   currentBranch: string | null;

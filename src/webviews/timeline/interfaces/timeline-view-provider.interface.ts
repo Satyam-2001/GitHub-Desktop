@@ -14,6 +14,8 @@ export interface CommitEntry {
   authorEmail: string;
   relativeTime: string;
   committedAt: string;
+  tags?: string[];
+  isPushed?: boolean;
 }
 
 export interface CommitDetail {

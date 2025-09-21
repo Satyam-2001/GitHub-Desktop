@@ -11,7 +11,9 @@ export class Commit {
     public readonly author: Author,
     public readonly date: CommitDate,
     public readonly files: FileChange[] = [],
-    public readonly avatarUrl?: string
+    public readonly avatarUrl?: string,
+    public readonly tags?: string[],
+    public readonly isPushed: boolean = true
   ) {}
 
   get shortHash(): string {
@@ -52,7 +54,9 @@ export class Commit {
       files: this.files.map(f => f.toJSON()),
       totalAdditions: this.totalAdditions,
       totalDeletions: this.totalDeletions,
-      avatarUrl: this.avatarUrl
+      avatarUrl: this.avatarUrl,
+      tags: this.tags,
+      isPushed: this.isPushed
     };
   }
 }

@@ -107,6 +107,12 @@ export class MessageHandlerService {
           await this.handleLoadMoreCommits(message.offset);
         }
         break;
+      case 'fetch':
+        await this.handleFetch();
+        break;
+      case 'publish':
+        await this.handlePublish();
+        break;
       case 'selectCommit':
         if (typeof message.hash === 'string') {
           await this.handleSelectCommit(message.hash);
@@ -155,6 +161,12 @@ export class MessageHandlerService {
       this.view.webview.postMessage({
         command: 'updateRepository',
         repository: data.repository
+      });
+
+      this.view.webview.postMessage({
+        command: 'updateRemoteStatus',
+        remoteStatus: data.remoteStatus,
+        tags: data.tags
       });
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to refresh: ${error}`);
@@ -208,6 +220,7 @@ export class MessageHandlerService {
     try {
       const git = simpleGit(repository.localPath);
       await git.push();
+      await this.handleRefresh(); // Refresh all data including remote status
       vscode.window.showInformationMessage('Pushed successfully');
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to push: ${error}`);
@@ -535,6 +548,50 @@ export class MessageHandlerService {
         type: 'error',
         message: error instanceof Error ? error.message : 'Failed to load file diff.'
       });
+    }
+  }
+
+  private async handleFetch(): Promise<void> {
+    const repository = getPrimaryRepository(this.repositories);
+    if (!repository) return;
+
+    try {
+      const git = simpleGit(repository.localPath);
+      await git.fetch();
+      vscode.window.showInformationMessage('Fetched from remote successfully');
+      await this.handleRefresh();
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to fetch: ${error}`);
+    }
+  }
+
+  private async handlePublish(): Promise<void> {
+    const repository = getPrimaryRepository(this.repositories);
+    if (!repository) return;
+
+    try {
+      const git = simpleGit(repository.localPath);
+      const branch = await git.branch();
+      const currentBranch = branch.current;
+
+      if (!currentBranch) {
+        vscode.window.showErrorMessage('No branch selected');
+        return;
+      }
+
+      // Check if we have a remote
+      const remotes = await git.getRemotes(true);
+      if (remotes.length === 0) {
+        vscode.window.showErrorMessage('No remote repository configured');
+        return;
+      }
+
+      const defaultRemote = remotes[0].name;
+      await git.push(['-u', defaultRemote, currentBranch]);
+      vscode.window.showInformationMessage(`Published branch '${currentBranch}' to ${defaultRemote}`);
+      await this.handleRefresh();
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to publish branch: ${error}`);
     }
   }
 }

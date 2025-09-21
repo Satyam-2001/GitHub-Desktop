@@ -4,6 +4,10 @@ import simpleGit from 'simple-git';
 import { RepositoryManager } from '../../../core/repositories/repository-manager';
 import { getPrimaryRepository } from '../../../shared/utils/repo-selection';
 import { ChangeEntry, CommitEntry, CommitDetail, CommitDetailFile } from '../interfaces/timeline-view-provider.interface';
+const dayjs = require('dayjs');
+const relativeTime = require('dayjs/plugin/relativeTime');
+
+dayjs.extend(relativeTime);
 
 export class GitOperationsService {
   constructor(private readonly repositories: RepositoryManager) {}
@@ -16,6 +20,15 @@ export class GitOperationsService {
     currentBranch: string | null;
     branchActivity: Record<string, string>;
     repository: any;
+    remoteStatus: {
+      hasRemote: boolean;
+      isPublished: boolean;
+      ahead: number;
+      behind: number;
+      lastFetched: Date | null;
+      remoteBranch: string | null;
+    };
+    tags: Record<string, string[]>;
   } | null> {
     const repository = getPrimaryRepository(this.repositories);
     if (!repository) {
@@ -24,10 +37,12 @@ export class GitOperationsService {
 
     try {
       const git = simpleGit(repository.localPath);
-      const [status, log, branch] = await Promise.all([
+      const [status, log, branch, remotes, tags] = await Promise.all([
         git.status(),
         git.log({ maxCount: 50 }),
-        git.branch()
+        git.branch(),
+        git.getRemotes(true),
+        git.tags()
       ]);
 
       const changes: ChangeEntry[] = status.files.map((file) => ({
@@ -36,7 +51,13 @@ export class GitOperationsService {
         staged: file.index !== ' ' && file.index !== '?'
       }));
 
-      const commits: CommitEntry[] = log.all.map((commit) => ({
+      // Get tags for each commit
+      const tagMap = await this.getTagsForCommits(git);
+
+      // Get remote tracking status to determine which commits are pushed
+      const remoteStatus = await this.getRemoteStatus(git, branch.current, remotes);
+
+      const commits: CommitEntry[] = log.all.map((commit, index) => ({
         hash: commit.hash || '',
         shortHash: (commit.hash || '').slice(0, 7),
         message: commit.message || '',
@@ -45,7 +66,10 @@ export class GitOperationsService {
         authorName: commit.author_name || '',
         authorEmail: commit.author_email || '',
         relativeTime: this.formatRelativeTime(commit.date),
-        committedAt: commit.date ? String(commit.date) : ''
+        committedAt: commit.date ? String(commit.date) : '',
+        tags: tagMap[commit.hash || ''] || [],
+        // First 'ahead' commits are unpushed
+        isPushed: remoteStatus.isPublished ? index >= remoteStatus.ahead : false
       }));
 
       const hasMoreCommits = log.all.length === 50;
@@ -72,7 +96,9 @@ export class GitOperationsService {
           name: path.basename(repository.localPath),
           path: repository.localPath,
           remote: repository.remoteUrl
-        }
+        },
+        remoteStatus,
+        tags: tagMap
       };
     } catch (error) {
       throw new Error(`Failed to load git data: ${error}`);
@@ -180,17 +206,24 @@ export class GitOperationsService {
 
     try {
       const git = simpleGit(repository.localPath);
-      const logOutput = await git.raw([
-        'log',
-        '--oneline',
-        '--format=%H%x09%an%x09%ae%x09%ad%x09%s',
-        '--date=iso',
-        '--max-count=50',
-        `--skip=${offset}`
+      const [logOutput, branch, remotes] = await Promise.all([
+        git.raw([
+          'log',
+          '--oneline',
+          '--format=%H%x09%an%x09%ae%x09%ad%x09%s',
+          '--date=iso',
+          '--max-count=50',
+          `--skip=${offset}`
+        ]),
+        git.branch(),
+        git.getRemotes(true)
       ]);
 
+      // Get remote status to determine which commits are pushed
+      const remoteStatus = await this.getRemoteStatus(git, branch.current, remotes);
+
       const lines = logOutput.trim().split('\n').filter(line => line.trim());
-      const commits: CommitEntry[] = lines.map((line) => {
+      const commits: CommitEntry[] = lines.map((line, index) => {
         const [hash, author, email, date, ...messageParts] = line.split('\t');
         const message = messageParts.join('\t');
 
@@ -203,7 +236,9 @@ export class GitOperationsService {
           authorName: author || '',
           authorEmail: email || '',
           relativeTime: this.formatRelativeTime(this.parseGitDate(date)),
-          committedAt: date || ''
+          committedAt: date || '',
+          // Commits loaded after offset are likely pushed (since first 'ahead' commits from offset 0 are unpushed)
+          isPushed: remoteStatus.isPublished ? (offset + index) >= remoteStatus.ahead : false
         };
       });
 
@@ -269,6 +304,139 @@ export class GitOperationsService {
     return new Date('1970-01-01');
   }
 
+  private async getTagsForCommits(git: any): Promise<Record<string, string[]>> {
+    const tagMap: Record<string, string[]> = {};
+
+    try {
+      const tagList = await git.raw(['show-ref', '--tags']);
+      const lines = tagList.split('\n').filter((line: string) => line.trim());
+
+      for (const line of lines) {
+        const [hash, ref] = line.split(' ');
+        if (!hash || !ref) continue;
+
+        const tagName = ref.replace('refs/tags/', '');
+        if (!tagMap[hash]) {
+          tagMap[hash] = [];
+        }
+        tagMap[hash].push(tagName);
+      }
+
+      // Also get annotated tags pointing to commits
+      const annotatedTags = await git.raw(['for-each-ref', '--format=%(objectname) %(refname:short) %(object)', 'refs/tags']);
+      const annotatedLines = annotatedTags.split('\n').filter((line: string) => line.trim());
+
+      for (const line of annotatedLines) {
+        const parts = line.split(' ');
+        if (parts.length >= 3) {
+          const [, tagName, commitHash] = parts;
+          if (commitHash && commitHash.length === 40) {
+            if (!tagMap[commitHash]) {
+              tagMap[commitHash] = [];
+            }
+            if (!tagMap[commitHash].includes(tagName)) {
+              tagMap[commitHash].push(tagName);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      // Silently fail if tags cannot be retrieved
+    }
+
+    return tagMap;
+  }
+
+  private async getRemoteStatus(git: any, currentBranch: string | null, remotes: any[]): Promise<{
+    hasRemote: boolean;
+    isPublished: boolean;
+    ahead: number;
+    behind: number;
+    lastFetched: Date | null;
+    remoteBranch: string | null;
+  }> {
+    if (!currentBranch || remotes.length === 0) {
+      return {
+        hasRemote: false,
+        isPublished: false,
+        ahead: 0,
+        behind: 0,
+        lastFetched: null,
+        remoteBranch: null
+      };
+    }
+
+    try {
+      // Check if current branch has a remote tracking branch
+      const trackingInfo = await git.raw(['branch', '-vv', '--no-color']);
+      const lines = trackingInfo.split('\n');
+      let remoteBranch: string | null = null;
+      let ahead = 0;
+      let behind = 0;
+
+      for (const line of lines) {
+        if (line.trim().startsWith('*')) {
+          // Parse remote tracking info
+          const match = line.match(/\[([^\]]+)\]/);
+          if (match) {
+            const trackingPart = match[1];
+            const remoteParts = trackingPart.split(':');
+            remoteBranch = remoteParts[0].trim();
+
+            // Parse ahead/behind
+            const aheadMatch = trackingPart.match(/ahead (\d+)/);
+            const behindMatch = trackingPart.match(/behind (\d+)/);
+
+            if (aheadMatch) {
+              ahead = parseInt(aheadMatch[1], 10);
+            }
+            if (behindMatch) {
+              behind = parseInt(behindMatch[1], 10);
+            }
+          }
+          break;
+        }
+      }
+
+      // Get last fetch time from git reflog
+      let lastFetched: Date | null = null;
+      try {
+        const fetchLog = await git.raw(['reflog', 'show', '--grep=fetch', '--date=iso', '-n', '1', '--format=%cd']);
+        if (fetchLog.trim()) {
+          lastFetched = new Date(fetchLog.trim());
+        }
+      } catch {
+        // If reflog fails, check the FETCH_HEAD file modification time
+        try {
+          const fs = require('fs');
+          const fetchHeadPath = path.join(git.gitDir || '.git', 'FETCH_HEAD');
+          const stats = fs.statSync(fetchHeadPath);
+          lastFetched = stats.mtime;
+        } catch {
+          // Ignore if FETCH_HEAD doesn't exist
+        }
+      }
+
+      return {
+        hasRemote: remotes.length > 0,
+        isPublished: remoteBranch !== null,
+        ahead,
+        behind,
+        lastFetched,
+        remoteBranch
+      };
+    } catch (error) {
+      return {
+        hasRemote: remotes.length > 0,
+        isPublished: false,
+        ahead: 0,
+        behind: 0,
+        lastFetched: null,
+        remoteBranch: null
+      };
+    }
+  }
+
   private formatRelativeTime(date: Date | string | any): string {
     let actualDate: Date;
 
@@ -281,6 +449,8 @@ export class GitOperationsService {
     if (Number.isNaN(actualDate.getTime())) {
       return 'Unknown date';
     }
+
+    // Use simple relative time calculation instead of dayjs
     const diff = Date.now() - actualDate.getTime();
     const seconds = Math.round(diff / 1000);
     if (seconds < 60) {

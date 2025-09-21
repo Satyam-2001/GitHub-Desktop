@@ -14,6 +14,7 @@ const queryClient = new QueryClient();
 export const App: React.FC<AppProps> = ({ bridge, initialState }) => {
   const [state, setState] = useState(initialState);
   const [branchActivity, setBranchActivity] = useState<Record<string, string>>({});
+  const [remoteStatus, setRemoteStatus] = useState(initialState.remoteStatus || null);
 
   useEffect(() => {
     // Send ready message to request initial data
@@ -44,6 +45,9 @@ export const App: React.FC<AppProps> = ({ bridge, initialState }) => {
           break;
         case 'updateRepository':
           setState((prev) => ({ ...prev, repository: message.repository }));
+          break;
+        case 'updateRemoteStatus':
+          setRemoteStatus(message.remoteStatus);
           break;
         case 'updateAccounts':
           setState((prev) => ({
@@ -93,6 +97,7 @@ export const App: React.FC<AppProps> = ({ bridge, initialState }) => {
           bridge={bridge}
           hasMoreCommits={state.hasMoreCommits}
           commitsOffset={state.commitsOffset}
+          remoteStatus={remoteStatus}
         />
       </ThemeProvider>
     </QueryClientProvider>
