@@ -164,45 +164,53 @@ export class MessageHandlerService {
 
           // Add authentication to HTTPS URL
           if (remoteUrl.startsWith('https://github.com/')) {
+            // For GitHub tokens, use the token as the password with any username (or 'x-access-token')
+            // GitHub accepts both formats: username:token or x-access-token:token
             const urlWithAuth = remoteUrl.replace(
               'https://github.com/',
-              `https://${encodeURIComponent(activeAccount.login)}:${encodeURIComponent(token)}@github.com/`
+              `https://x-access-token:${encodeURIComponent(token)}@github.com/`
             );
+
+            console.log('Configuring auth for:', activeAccount.login, 'on repo:', remoteUrl);
 
             // Temporarily update the remote URL for this operation
             await git.remote(['set-url', 'origin', urlWithAuth]);
 
-            // Return git instance with a cleanup function
+            // Store original URL for cleanup
             const originalUrl = remoteUrl;
-            const gitWithCleanup = {
-              ...git,
-              push: async (...args: any[]) => {
-                try {
-                  const result = await git.push(...args);
-                  // Restore original URL after operation
-                  await git.remote(['set-url', 'origin', originalUrl]);
-                  return result;
-                } catch (error) {
-                  // Restore original URL even on error
-                  await git.remote(['set-url', 'origin', originalUrl]);
-                  throw error;
-                }
-              },
-              pull: async (...args: any[]) => {
-                try {
-                  const result = await git.pull(...args);
-                  // Restore original URL after operation
-                  await git.remote(['set-url', 'origin', originalUrl]);
-                  return result;
-                } catch (error) {
-                  // Restore original URL even on error
-                  await git.remote(['set-url', 'origin', originalUrl]);
-                  throw error;
-                }
+
+            // Create a wrapper that ensures URL cleanup after operations
+            const gitWithAuth = Object.create(git);
+
+            // Override push method
+            gitWithAuth.push = async function(...args: any[]) {
+              try {
+                const result = await git.push(...args);
+                // Restore original URL after successful push
+                await git.remote(['set-url', 'origin', originalUrl]);
+                return result;
+              } catch (error) {
+                // Restore original URL even on error
+                await git.remote(['set-url', 'origin', originalUrl]);
+                throw error;
               }
             };
 
-            return gitWithCleanup;
+            // Override pull method
+            gitWithAuth.pull = async function(...args: any[]) {
+              try {
+                const result = await git.pull(...args);
+                // Restore original URL after successful pull
+                await git.remote(['set-url', 'origin', originalUrl]);
+                return result;
+              } catch (error) {
+                // Restore original URL even on error
+                await git.remote(['set-url', 'origin', originalUrl]);
+                throw error;
+              }
+            };
+
+            return gitWithAuth;
           }
         }
       }
@@ -301,9 +309,15 @@ export class MessageHandlerService {
 
   private async handlePush(): Promise<void> {
     const repository = getPrimaryRepository(this.repositories);
-    if (!repository) return;
+    if (!repository) {
+      vscode.window.showErrorMessage('No repository found in the current workspace');
+      return;
+    }
 
     try {
+      // Log repository info for debugging
+      console.log('Pushing to repository:', repository.name, 'at', repository.localPath);
+
       const git = await this.configureGitWithAuth(repository.localPath);
       if (!git) {
         vscode.window.showErrorMessage('No authenticated GitHub account found. Please sign in first.');
@@ -313,8 +327,9 @@ export class MessageHandlerService {
       await git.push();
       await this.handleRefresh(); // Refresh all data including remote status
       vscode.window.showInformationMessage('Pushed successfully');
-    } catch (error) {
-      vscode.window.showErrorMessage(`Failed to push: ${error}`);
+    } catch (error: any) {
+      console.error('Push failed with error:', error);
+      vscode.window.showErrorMessage(`Failed to push: ${error.message || error}`);
     }
   }
 

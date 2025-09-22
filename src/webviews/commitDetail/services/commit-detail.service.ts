@@ -11,6 +11,8 @@ import { CommitDetail, CommitDetailFile, ICommitDetailService } from '../interfa
 dayjs.extend(relativeTime);
 
 export class CommitDetailService implements ICommitDetailService {
+  private static diffViewColumn: vscode.ViewColumn = vscode.ViewColumn.Three;
+
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly repositories: RepositoryManager
@@ -156,8 +158,10 @@ export class CommitDetailService implements ICommitDetailService {
         Buffer.from(newContent, 'utf8')
       );
 
-      // Open diff in VS Code editor
+      // Open diff in a specific dedicated column
       const title = `${path.basename(filePath)} (${hash.substring(0, 7)})`;
+
+      // Use the native diff command - it will automatically reuse the column
       await vscode.commands.executeCommand(
         'vscode.diff',
         oldTempFile,

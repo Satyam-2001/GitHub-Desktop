@@ -1,27 +1,37 @@
 # 🐙 GitHub Desktop for VS Code
 
 <p align="center">
-  <img src="media/icon.png" alt="GitHub Desktop for VS Code" width="128" height="128">
+  <img src="https://storage.googleapis.com/nprep-f64b1.firebasestorage.app/admin/1758528789562_icon.png" alt="GitHub Desktop for VS Code" width="128" height="128">
 </p>
 
 <p align="center">
-  <strong>A comprehensive VS Code extension that brings the complete GitHub Desktop experience directly into your editor</strong>
+  <strong>Bring GitHub Desktop's complete workflow experience directly into VS Code</strong>
 </p>
 
 <p align="center">
-  Built with modern React UI components and featuring advanced Git operations, multi-account management, and seamless GitHub integration.
+  Modern React UI • Multi-Account Support • Advanced Git Operations • Seamless GitHub Integration
 </p>
 
 ---
 
-## 📸 Example
+## ✨ What You Get
 
+🎨 **GitHub Desktop-style interface** right in your VS Code sidebar
+👥 **Multiple GitHub accounts** with one-click switching
+📝 **Visual commit history** with user avatars and detailed file changes
+🌿 **Advanced branch management** with activity tracking
+🔄 **Smart sync operations** with visual feedback
+⚡ **Native VS Code integration** using built-in diff viewer
+
+---
+
+## 📸 Screenshots
 
 ### Main Interface
-![Main Interface](media/example/1.png)
+![Main Interface](https://storage.googleapis.com/nprep-f64b1.firebasestorage.app/admin/1758528839314_1.png)
 
 ### Timeline and Changes View
-![Timeline View](media/example/2.png)
+![Timeline View](https://storage.googleapis.com/nprep-f64b1.firebasestorage.app/admin/1758528841624_2.png)
 
 
 ---
@@ -87,422 +97,170 @@
 - **Contextual actions** (Force Push, Fetch Origin) when available
 - **GitHub Desktop-style layout** with proper spacing and icons
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
-### **Installation & Setup**
+### 1. **Install the Extension**
+- Search for "GitHub Desktop" in VS Code Extensions
+- Click **Install** and you're ready to go!
 
-#### **📦 For Development**
-1. **Clone this repository**
-   ```bash
-   git clone https://github.com/yourusername/vscode-github-desktop.git
-   cd vscode-github-desktop
-   ```
+### 2. **Sign In to GitHub**
+1. Look for the 🐙 icon in VS Code's activity bar
+2. Click **"Add Account"** or use Command Palette: `GitHub Desktop: Sign In`
+3. Choose your preferred method:
+   - **Browser Sign-in** (Recommended) - Uses VS Code's built-in GitHub authentication
+   - **GitHub CLI** - If you have `gh` installed
+   - **Personal Access Token** - For manual setup
+   - **Enterprise Server** - For GitHub Enterprise users
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+### 3. **Start Using**
+- Any Git repository in your workspace is automatically detected
+- Use the sidebar to view commit history, manage branches, and stage changes
+- Right-click commits for advanced Git operations
+- Switch between accounts instantly from the Accounts panel
 
-3. **Build the extension**
-   ```bash
-   npm run compile && npm run build-webview
-   ```
+> **💡 Pro Tip**: The extension works seamlessly with VS Code's built-in Source Control - no configuration needed!
 
-4. **Launch in VS Code**
-   - Press `F5` or run `Debug: Start Debugging`
-   - A new Extension Development Host window will open
+## 💡 Key Features in Action
 
-#### **📥 For End Users**
-1. **Download from VS Code Marketplace** (coming soon)
-2. **Or install via VSIX**:
-   - Run `npm run package` to create a `.vsix` file
-   - Install using `code --install-extension vscode-github-desktop-1.0.3.vsix`
+### **Multi-Account Support**
+- Add multiple GitHub accounts (personal, work, enterprise)
+- Switch between accounts with a single click
+- Each account maintains its own repositories and settings
 
----
+### **Visual Git Operations**
+- **Commit History**: Timeline view with user avatars and commit details
+- **File Changes**: Click any commit to see detailed file diffs
+- **Branch Management**: Visual branch dropdown with recent/active branches
+- **Right-click Context**: Access all Git operations via context menus
 
-### **🎯 Quick Start Guide**
+### **Seamless Workflow**
+- **Auto-detection**: Any Git repo in your workspace appears automatically
+- **Stage & Commit**: VS Code Source Control-style interface for staging files
+- **Sync Operations**: Push/pull with visual feedback and conflict detection
+- **GitHub Integration**: Direct links to view commits/repos on GitHub
 
-#### **1. Initial Setup**
-1. Open the **GitHub Desktop** view in the activity bar (🐙 icon)
-2. Click **"Add Account"** or run `GitHub Desktop: Sign In` command
-3. Choose your sign-in method:
-   - **Use GitHub CLI** (if `gh` is installed and authenticated)
-   - **Enter Personal Access Token** manually
-   - **Switch GitHub CLI Account** (for multiple CLI accounts)
+## 🎛️ Available Commands
 
-> **💡 Pro Tip**: If you have GitHub CLI with multiple accounts, use the "Switch GitHub CLI Account" option to add all your accounts easily!
+Access these commands via Command Palette (`Ctrl+Shift+P`):
 
-#### **2. Multi-Account Setup**
-1. **First Account**: Follow Initial Setup steps above
-2. **Additional Accounts**:
-   - Click **"Add Account"** in the Accounts panel
-   - For GitHub CLI users with multiple accounts:
-     - Select "Switch GitHub CLI Account"
-     - Run `gh auth switch` in the opened terminal
-     - Select your other account
-     - Click "Add Account" again and select "Use GitHub CLI"
+- `GitHub Desktop: Sign In` - Add a new GitHub account
+- `GitHub Desktop: Switch Active Account` - Switch between your accounts
+- `GitHub Desktop: Clone Repository` - Clone a repo with account selection
+- `GitHub Desktop: Open Repository` - Open any tracked repository
+- `GitHub Desktop: Create Issue` - Create GitHub issues directly
+- `GitHub Desktop: Refresh Views` - Refresh all panels
 
-#### **3. Working with Repositories**
-- **📂 Auto-detection**: Open any Git repository - it's automatically detected
-- **📥 Clone new repos**: Use `GitHub Desktop: Clone Repository` for new projects
-- **🔄 Switch repositories**: Select from the **Repositories** tree view
-- **🌐 Open on GitHub**: Right-click any repository for GitHub shortcuts
-
-#### **4. Daily Git Workflow**
-
-**📝 Making Changes**
-- **View changes**: Navigate to the Changes section (styled like VS Code Source Control)
-- **Stage files**: Use checkboxes or "Stage All" button
-- **Write commits**: Enter commit message and press `Ctrl+Enter` or click "Commit"
-- **Push/Pull**: Use the "Sync Changes" button
-
-**📚 Browsing History**
-- **Switch to History tab** to see commit timeline with avatars
-- **Click any commit** to open detailed file changes in a separate panel
-- **Right-click commits** for advanced operations:
-  - Reset to commit, Checkout, Revert
-  - Create branch from commit, Create tags
-  - Cherry-pick, Copy SHA, View on GitHub
-
-**🌿 Branch Operations**
-- **Current branch** displayed in timeline header with dropdown arrow
-- **Switch branches**: Click the branch name to see branch selector
-- **Create branches**: Available in branch dropdown or from commits
-- **Merge branches**: Right-click merge option in branch dropdown
-
-#### **5. Advanced Features**
-- **🔄 Sync Operations**: Timeline header shows dynamic sync status
-- **👥 Account Switching**: Click any account in Accounts panel to switch
-- **🎛️ Context Menus**: Right-click commits, branches, files for more options
-- **📊 File Diffs**: Integrated with VS Code's native diff viewer
-
-## 📋 Available Commands
-
-| Command | ID | Description | Keyboard Shortcut |
-|---------|----|-----------|-------------------|
-| **GitHub Desktop: Sign In** | `githubDesktop.signIn` | Sign in with GitHub account | - |
-| **GitHub Desktop: Sign Out** | `githubDesktop.signOut` | Sign out from current account | - |
-| **GitHub Desktop: Switch Active Account** | `githubDesktop.switchAccount` | Switch between signed-in accounts | - |
-| **GitHub Desktop: Switch to Account** | `githubDesktop.switchToAccount` | Switch to specific account (internal) | - |
-| **GitHub Desktop: Clone Repository** | `githubDesktop.cloneRepository` | Clone repository with account selection | - |
-| **GitHub Desktop: Open Repository** | `githubDesktop.openRepository` | Open repository in current window | - |
-| **GitHub Desktop: Create Issue** | `githubDesktop.createIssue` | Create GitHub issue directly | - |
-| **GitHub Desktop: Refresh Views** | `githubDesktop.refreshViews` | Force refresh all panels | - |
-
-### **🎨 UI Interactions**
-- **Ctrl+Enter** - Commit changes (when in commit message field)
-- **Click account** - Switch to that account instantly
-- **Right-click commit** - Open context menu with Git operations
-- **Click commit** - Open detailed file changes panel
-- **Click branch name** - Open branch selector dropdown
+### **🎨 Keyboard & Mouse Shortcuts**
+- **Ctrl+Enter** - Commit staged changes
+- **Click any account** - Switch to that account instantly
+- **Right-click commits** - Access Git operations menu
+- **Click commit** - View detailed file changes
+- **Click branch name** - Open branch selector
 
 ---
 
-## ⚙️ Technical Details
+## 🔒 Security & Privacy
 
-### **🏗️ Architecture**
-- **Frontend**: React 19 + Material-UI v6 + TypeScript
-- **Backend**: VS Code Extension API + Node.js
-- **Git Operations**: simple-git library with async/await
-- **GitHub API**: @octokit/rest with full authentication
-- **Build System**: Vite (webviews) + Webpack (extension)
-- **State Management**: React Query + Custom hooks
-
-### **💾 Data Storage**
-- **Account metadata**: VS Code global state (workspace-independent)
-- **Secure tokens**: VS Code Secret Storage API (encrypted)
-- **Repository settings**: Workspace-specific storage
-- **GitHub CLI integration**: Automatic token reuse and account detection
-- **Cache management**: Intelligent caching with TTL
-
-### **🌐 WebView Integration**
-- **Separate webviews**: Main sidebar + commit detail panels
-- **VS Code theming**: Full CSS variable integration with automatic theme switching
-- **Message bridge**: Secure bidirectional communication between React and extension
-- **State persistence**: Maintains state across tab switches and window reloads
-- **Performance**: Lazy loading and virtual scrolling for large repositories
-
-### **🔒 Security Features**
-- **Token encryption**: All GitHub tokens stored in VS Code Secret Storage
-- **Secure communication**: Sandboxed webviews with controlled message passing
-- **No token exposure**: Tokens never logged or exposed in UI
-- **Account isolation**: Each account's data completely isolated
-- **HTTPS enforcement**: All GitHub API calls use HTTPS
+Your data is safe with us:
+- **Encrypted storage**: All GitHub tokens stored securely using VS Code's Secret Storage
+- **Local processing**: Everything runs locally on your machine
+- **No data collection**: We don't collect or transmit your personal data
+- **Account isolation**: Each GitHub account's data is completely separated
+- **Open source**: Full transparency - inspect the code yourself
 
 ---
 
-## 🔧 Configuration
+## ⚙️ Requirements
 
-### **📁 File Association**
-The extension automatically detects Git repositories in your workspace. No manual configuration required!
+- **VS Code**: Version 1.84.0 or higher
+- **Git**: Must be installed and accessible in PATH
+- **GitHub Account**: For full functionality (free accounts work perfectly)
 
-### **⚙️ VS Code Settings**
-Currently, the extension works out-of-the-box with default settings. Future versions will include:
-- Custom themes and layouts
-- Keyboard shortcut customization
-- Git operation preferences
-- Notification settings
-
-### **🔑 GitHub Personal Access Token Requirements**
-When using manual token authentication, ensure your token has these scopes:
-- `repo` - Full repository access
-- `read:org` - Read organization membership
-- `workflow` - GitHub Actions workflow access
+### **Personal Access Token Scopes** (if using manual token setup)
+When creating a personal access token, ensure these scopes:
+- `repo` - Repository access
+- `read:org` - Organization membership
+- `user:email` - User email access
 
 ---
 
-## 🚨 Troubleshooting
+## 🆘 Need Help?
 
-### **Common Issues**
+### **Common Issues & Solutions**
 
-**🔐 Authentication Problems**
-- Ensure your GitHub token has correct scopes (`repo`, `read:org`, `workflow`)
+**🔐 Can't sign in?**
+- Try "Browser Sign-in" first (recommended method)
+- For tokens: Ensure scopes include `repo`, `read:org`, `user:email`
 - For GitHub CLI: Run `gh auth status` to verify authentication
-- For multiple CLI accounts: Use `gh auth switch` to change active account
 
-**📂 Repository Not Detected**
-- Verify the folder contains a `.git` directory
+**📂 Repository not showing?**
+- Make sure the folder contains a `.git` directory
 - Use `GitHub Desktop: Refresh Views` command
-- Check if the repository has a remote origin
+- Check that you have access to the repository
 
-**🔄 Sync Issues**
-- Verify internet connection and GitHub status
-- Check if you have push permissions to the repository
-- For organization repos, ensure your account has proper access
+**🔄 Sync not working?**
+- Verify you have push permissions to the repository
+- Check your internet connection
+- For organization repos, ensure proper access rights
 
-**🎨 UI/Theme Issues**
-- Restart VS Code if themes don't load correctly
-- Check VS Code version compatibility (>= 1.84.0)
-- Clear VS Code extension cache if needed
-
-### **🐛 Reporting Issues**
-1. Check existing [GitHub Issues](https://github.com/yourusername/vscode-github-desktop/issues)
-2. Provide VS Code version, OS, and extension version
-3. Include steps to reproduce the issue
-4. Attach screenshots if UI-related
-
----
-
-## 🛠️ Development
-
-### **📁 Project Structure**
-```
-vscode-github-desktop/
-├── 📁 src/
-│   ├── 📄 extension.ts                    # Main extension entry point
-│   ├── 📁 core/
-│   │   ├── 📄 accounts/account-manager.ts # Multi-account management
-│   │   └── 📄 repositories/               # Repository management
-│   ├── 📁 webviews/
-│   │   ├── 📄 timeline/                   # Main sidebar webview provider
-│   │   ├── 📄 commitDetail/               # Commit detail webview provider
-│   │   └── 📁 app/                        # React application
-│   │       ├── 📄 App.tsx                 # Main React app
-│   │       ├── 📄 bridge.ts               # VS Code communication bridge
-│   │       ├── 📁 components/             # React components
-│   │       │   └── 📁 Timeline/           # Timeline-specific components
-│   │       ├── 📁 features/               # Feature-based organization
-│   │       └── 📁 hooks/                  # Custom React hooks
-│   ├── 📁 ui/
-│   │   └── 📁 tree-views/                 # Account & repository tree providers
-│   └── 📁 shared/                         # Shared types and utilities
-├── 📁 out/                                # Compiled extension (TypeScript → JavaScript)
-├── 📁 dist/                               # Built webviews (React → Bundled)
-├── 📁 media/                              # Extension icons & assets
-│   ├── 📄 icon.png                        # Extension icon
-│   └── 📁 example/                        # Screenshot examples
-└── 📄 package.json                        # Extension manifest & dependencies
-```
-
-### **🔨 Build Scripts**
-```bash
-# Development
-npm run compile          # Build extension (Webpack)
-npm run build-webview    # Build React webviews (Vite)
-npm run watch           # Watch extension changes (auto-rebuild)
-npm run watch-webview   # Watch webview changes (auto-rebuild)
-npm run dev-webview     # Vite dev server for webviews (HMR)
-
-# Production
-npm run vscode:prepublish  # Production build (both extension + webviews)
-npm run package           # Create .vsix package file
-
-# Testing & Quality
-npm run test             # Run extension tests
-npm run lint             # Lint TypeScript code
-npm run format           # Format code with Prettier
-```
-
-### **🧪 Development Workflow**
-1. **Setup**: Run `npm install` to install dependencies
-2. **Extension Development**: Use `npm run watch` + `F5` (Debug)
-3. **React Development**: Use `npm run watch-webview` for hot reload
-4. **Testing**: Open a Git repository in the Extension Development Host
-5. **Debugging**: Use VS Code debugger with breakpoints in TypeScript
-
----
-
-## 🎯 Roadmap
-
-### **🚧 Planned Features**
-- [ ] **Pull Request Management** - View, create, review, and manage PRs directly in VS Code
-- [ ] **GitHub Notifications** - Integrated notification center for mentions, reviews, issues
-- [ ] **Status Checks** - CI/CD pipeline status integration with workflow logs
-- [ ] **Stash Management** - Git stash operations with UI for saving/applying changes
-- [ ] **Conflict Resolution** - Visual merge conflict resolution with 3-way diff
-- [ ] **GitHub Actions** - Workflow status, logs, and re-run capabilities
-- [ ] **Repository Insights** - Contribution graphs, statistics, and analytics
-- [ ] **Team Collaboration** - @mentions, assignees, and team-specific features
-- [ ] **Advanced Git Operations** - Interactive rebase, cherry-pick multiple commits
-- [ ] **Performance Optimization** - Virtual scrolling, lazy loading for large repos
-
-### **✅ Completed Features**
-- [x] **React-based modern UI** with Material-UI components
-- [x] **Commit history with avatars** and GitHub user integration
-- [x] **Right-click context menus** for all Git operations
-- [x] **Commit detail panels** with file diffs and change overview
-- [x] **Advanced branch management** with activity tracking and grouping
-- [x] **Multi-account support** with secure token storage
-- [x] **File diff integration** using VS Code's native diff viewer
-- [x] **Repository auto-detection** and workspace integration
-- [x] **VS Code theme integration** with full CSS variable support
-- [x] **GitHub CLI integration** with automatic account detection
-- [x] **Timeline header** with dynamic sync status and operations
-- [x] **Source Control UI replica** matching VS Code's native interface
-
----
-
-## 🏆 Comparison with Other Extensions
-
-| Feature | GitHub Desktop for VS Code | GitLens | GitHub Pull Requests |
-|---------|----------------------------|---------|---------------------|
-| **UI Style** | GitHub Desktop replica | Overlay annotations | Native VS Code panels |
-| **Multi-Account** | ✅ Full support | ❌ Single account | ❌ Single account |
-| **Commit History** | ✅ Visual timeline | ✅ File-based history | ❌ Limited |
-| **Branch Management** | ✅ Advanced dropdown | ✅ Command palette | ❌ Basic |
-| **Pull Requests** | 🚧 Planned | ❌ View only | ✅ Full management |
-| **File Staging** | ✅ VS Code style | ❌ Command-based | ❌ Limited |
-| **GitHub Integration** | ✅ Full API integration | ✅ Read-only mostly | ✅ Full PR integration |
+### **🐛 Found a Bug?**
+[Report issues on GitHub](https://github.com/Satyam-2001/GitHub-Desktop/issues) - we fix them fast!
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions from the community! Here's how you can help:
+We welcome contributions! Here's how you can help:
 
-### **🐛 Bug Reports**
-1. Check [existing issues](https://github.com/yourusername/vscode-github-desktop/issues) first
-2. Use the bug report template
-3. Include VS Code version, OS, and steps to reproduce
-4. Add screenshots for UI-related issues
+### **For Users**
+- ⭐ **Star the repository** if you find it useful
+- 🐛 **Report bugs** on our [GitHub Issues](https://github.com/Satyam-2001/GitHub-Desktop/issues)
+- 💡 **Suggest features** via [GitHub Discussions](https://github.com/Satyam-2001/GitHub-Desktop/discussions)
+- 📝 **Write reviews** and share your experience
 
-### **💡 Feature Requests**
-1. Check the [roadmap](#-roadmap) and existing issues
-2. Use the feature request template
-3. Explain the use case and expected behavior
-4. Consider contributing the implementation!
+### **For Developers**
+- 🔧 **Fix bugs** or **add features** via pull requests
+- 📚 **Improve documentation**
+- 🧪 **Add tests** for better reliability
+- 🎨 **Enhance UI/UX** to match GitHub Desktop even closer
 
-### **🛠️ Development Contributions**
-1. **Fork the repository**
-   ```bash
-   git clone https://github.com/yourusername/vscode-github-desktop.git
-   cd vscode-github-desktop
-   ```
-
-2. **Create your feature branch**
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-
-3. **Set up development environment**
-   ```bash
-   npm install
-   npm run watch & npm run watch-webview
-   ```
-
-4. **Make your changes**
-   - Follow TypeScript best practices
-   - Add tests for new functionality
-   - Ensure UI matches GitHub Desktop style
-   - Test with multiple accounts/repositories
-
-5. **Test thoroughly**
-   - Test in Extension Development Host (`F5`)
-   - Test with different VS Code themes
-   - Test multi-account scenarios
-   - Verify all Git operations work
-
-6. **Commit your changes**
-   ```bash
-   git commit -m 'feat: Add amazing new feature'
-   ```
-
-7. **Push and create Pull Request**
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-
-### **📝 Documentation**
-- Improve README.md or wiki pages
-- Add code comments and JSDoc
-- Create usage examples or tutorials
-- Translate documentation
-
-### **🎨 Design Contributions**
-- UI/UX improvements
-- Icon design
-- Theme enhancements
-- Accessibility improvements
+Visit our [GitHub repository](https://github.com/Satyam-2001/GitHub-Desktop) to get started!
 
 ---
 
-## 📞 Support & Community
+## 🎯 What's Coming Next
 
-### **💬 Get Help**
-- **🐛 Bug Reports**: [GitHub Issues](https://github.com/yourusername/vscode-github-desktop/issues)
-- **💡 Feature Requests**: [GitHub Discussions](https://github.com/yourusername/vscode-github-desktop/discussions)
-- **📚 Documentation**: [Wiki](https://github.com/yourusername/vscode-github-desktop/wiki)
-- **❓ Questions**: [Discussions Q&A](https://github.com/yourusername/vscode-github-desktop/discussions/categories/q-a)
+We're constantly improving! Here's what's on our roadmap:
 
-### **🌟 Show Your Support**
-- ⭐ **Star this repository** if you find it useful
-- 🔄 **Share** with your developer friends
-- 🐦 **Tweet** about your experience
-- 📝 **Write a review** on VS Code Marketplace (coming soon)
+### **🚀 Upcoming Features**
+- 📝 **Pull Request Management** - View, create, and review PRs directly in VS Code
+- 🔔 **GitHub Notifications** - Get notified about mentions, reviews, and issues
+- ✅ **Status Checks** - See CI/CD pipeline status right in the extension
+- 📦 **Stash Management** - Visual Git stash operations
+- 🤝 **Conflict Resolution** - Better merge conflict resolution tools
+- 📊 **Repository Insights** - Contribution graphs and repository statistics
 
-### **📈 Statistics**
-- **Downloads**: Coming to VS Code Marketplace
-- **GitHub Stars**: [![GitHub stars](https://img.shields.io/github/stars/yourusername/vscode-github-desktop?style=social)](https://github.com/yourusername/vscode-github-desktop/stargazers)
-- **Issues**: [![GitHub issues](https://img.shields.io/github/issues/yourusername/vscode-github-desktop)](https://github.com/yourusername/vscode-github-desktop/issues)
-- **Contributors**: [![GitHub contributors](https://img.shields.io/github/contributors/yourusername/vscode-github-desktop)](https://github.com/yourusername/vscode-github-desktop/graphs/contributors)
+### **🎉 Recently Added**
+- ✅ Multi-account support with secure token storage
+- ✅ Right-click context menus for all Git operations
+- ✅ VS Code native diff integration
+- ✅ GitHub CLI integration with account detection
+- ✅ Branch activity tracking and smart grouping
+- ✅ Dynamic sync status and operations
 
 ---
 
-## 📄 License
+## 🌟 Why Choose This Extension?
 
-```
-MIT License
+**vs. GitLens**: We provide a dedicated GitHub Desktop-style interface, while GitLens focuses on inline annotations and blame features.
 
-Copyright (c) 2024 GitHub Desktop for VS Code Contributors
+**vs. GitHub Pull Requests**: We offer complete Git workflow management with multi-account support, while GitHub PR extension focuses specifically on pull request operations.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+**vs. Built-in Source Control**: We enhance VS Code's native Git support with GitHub-specific features, visual commit history, and multi-account management.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+**Our Unique Value**: The only extension that brings the complete GitHub Desktop experience into VS Code with full multi-account support.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+---
 
 ---
 
@@ -511,6 +269,16 @@ SOFTWARE.
 </p>
 
 <p align="center">
-  <sub>🚀 Happy coding with GitHub Desktop for VS Code! 🚀</sub>
+  🚀 <strong>Happy coding with GitHub Desktop for VS Code!</strong> 🚀
 </p>
+
+<p align="center">
+  <a href="https://github.com/Satyam-2001/GitHub-Desktop">⭐ Star on GitHub</a> •
+  <a href="https://github.com/Satyam-2001/GitHub-Desktop/issues">🐛 Report Issues</a> •
+  <a href="https://github.com/Satyam-2001/GitHub-Desktop/discussions">💡 Discussions</a>
+</p>
+
+---
+
+**License**: MIT © 2024 GitHub Desktop for VS Code Contributors
 

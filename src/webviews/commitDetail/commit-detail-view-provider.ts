@@ -29,7 +29,9 @@ export class CommitDetailViewProvider implements ICommitDetailViewProvider {
 
     // Create or show the webview panel
     if (this.panel) {
-      this.panel.reveal();
+      // Panel exists, just update content and bring to front
+      this.panel.reveal(vscode.ViewColumn.Active);
+      this.panel.title = `Commit: ${commitHash.substring(0, 7)}`;
       // Update the message handler with the new commit hash
       this.updateMessageHandler();
     } else {
@@ -47,8 +49,8 @@ export class CommitDetailViewProvider implements ICommitDetailViewProvider {
   private async createPanel(): Promise<void> {
     this.panel = vscode.window.createWebviewPanel(
       'commitDetail',
-      'Commit Details',
-      vscode.ViewColumn.Beside, // Open beside current editor
+      `Commit: ${this.commitHash?.substring(0, 7) || 'Details'}`,
+      vscode.ViewColumn.Active, // Open in the currently active column
       {
         enableScripts: true,
         localResourceRoots: [
