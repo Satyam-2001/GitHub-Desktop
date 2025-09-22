@@ -1,5 +1,5 @@
-import * as path from 'path';
-import * as vscode from 'vscode';
+import * as path from "path";
+import * as vscode from "vscode";
 
 interface IconDefinition {
   iconPath?: string;
@@ -38,7 +38,10 @@ export class IconThemeService {
     this.loadingPromise = undefined;
   }
 
-  public async getIconForFile(webview: vscode.Webview, filePath: string): Promise<FileIconInfo | undefined> {
+  public async getIconForFile(
+    webview: vscode.Webview,
+    filePath: string,
+  ): Promise<FileIconInfo | undefined> {
     await this.ensureThemeLoaded();
 
     if (!this.themeDoc) {
@@ -68,7 +71,9 @@ export class IconThemeService {
       return this.loadingPromise;
     }
 
-    const configuredThemeId = vscode.workspace.getConfiguration('workbench').get<string>('iconTheme') ?? '';
+    const configuredThemeId =
+      vscode.workspace.getConfiguration("workbench").get<string>("iconTheme") ??
+      "";
     if (this.themeDoc && this.themeId === configuredThemeId) {
       return;
     }
@@ -89,7 +94,9 @@ export class IconThemeService {
     }
 
     for (const extension of vscode.extensions.all) {
-      const contributions = extension.packageJSON?.contributes?.iconThemes as Array<{ id: string; path: string }> | undefined;
+      const contributions = extension.packageJSON?.contributes?.iconThemes as
+        | Array<{ id: string; path: string }>
+        | undefined;
       if (!Array.isArray(contributions)) {
         continue;
       }
@@ -100,22 +107,31 @@ export class IconThemeService {
       }
 
       try {
-        const themeUri = vscode.Uri.joinPath(extension.extensionUri, theme.path);
+        const themeUri = vscode.Uri.joinPath(
+          extension.extensionUri,
+          theme.path,
+        );
         const bytes = await vscode.workspace.fs.readFile(themeUri);
-        const content = Buffer.from(bytes).toString('utf8');
+        const content = Buffer.from(bytes).toString("utf8");
         this.themeDoc = JSON.parse(content) as IconThemeDocument;
-        this.themeExtensionUri = vscode.Uri.joinPath(extension.extensionUri, path.dirname(theme.path));
+        this.themeExtensionUri = vscode.Uri.joinPath(
+          extension.extensionUri,
+          path.dirname(theme.path),
+        );
       } catch (error) {
-        console.warn('[GitHub Desktop] Failed to load icon theme', error);
+        console.warn("[GitHub Desktop] Failed to load icon theme", error);
       }
       break;
     }
   }
 
-  private getIconIdForFile(filePath: string, theme: IconThemeDocument): string | undefined {
+  private getIconIdForFile(
+    filePath: string,
+    theme: IconThemeDocument,
+  ): string | undefined {
     const fileName = path.basename(filePath);
     const lowerFileName = fileName.toLowerCase();
-    const ext = path.extname(fileName).replace('.', '').toLowerCase();
+    const ext = path.extname(fileName).replace(".", "").toLowerCase();
 
     const fileNames = theme.fileNames ?? {};
     const fileNamesLight = theme.fileNamesLight ?? {};
@@ -145,46 +161,55 @@ export class IconThemeService {
     return theme.file ?? theme.fileLight;
   }
 
-  private async getIconDataUri(relativeIconPath: string): Promise<string | undefined> {
+  private async getIconDataUri(
+    relativeIconPath: string,
+  ): Promise<string | undefined> {
     if (!this.themeExtensionUri || !relativeIconPath) {
       return undefined;
     }
 
-    const normalizedPath = relativeIconPath.replace(/\\/g, '/');
-    const cacheKey = `${this.themeId ?? 'default'}:${normalizedPath}`;
+    const normalizedPath = relativeIconPath.replace(/\\/g, "/");
+    const cacheKey = `${this.themeId ?? "default"}:${normalizedPath}`;
     if (this.iconCache.has(cacheKey)) {
       return this.iconCache.get(cacheKey);
     }
 
     try {
-      const iconUri = vscode.Uri.joinPath(this.themeExtensionUri, normalizedPath);
+      const iconUri = vscode.Uri.joinPath(
+        this.themeExtensionUri,
+        normalizedPath,
+      );
       const bytes = await vscode.workspace.fs.readFile(iconUri);
       const ext = path.extname(normalizedPath).toLowerCase();
       const mimeType = this.getMimeType(ext);
-      const dataUri = `data:${mimeType};base64,${Buffer.from(bytes).toString('base64')}`;
+      const dataUri = `data:${mimeType};base64,${Buffer.from(bytes).toString("base64")}`;
       this.iconCache.set(cacheKey, dataUri);
       return dataUri;
     } catch (error) {
-      console.warn('[GitHub Desktop] Failed to load icon', relativeIconPath, error);
+      console.warn(
+        "[GitHub Desktop] Failed to load icon",
+        relativeIconPath,
+        error,
+      );
       return undefined;
     }
   }
 
   private getMimeType(ext: string): string {
     switch (ext) {
-      case '.svg':
-        return 'image/svg+xml';
-      case '.png':
-        return 'image/png';
-      case '.jpg':
-      case '.jpeg':
-        return 'image/jpeg';
-      case '.gif':
-        return 'image/gif';
-      case '.ico':
-        return 'image/x-icon';
+      case ".svg":
+        return "image/svg+xml";
+      case ".png":
+        return "image/png";
+      case ".jpg":
+      case ".jpeg":
+        return "image/jpeg";
+      case ".gif":
+        return "image/gif";
+      case ".ico":
+        return "image/x-icon";
       default:
-        return 'image/png';
+        return "image/png";
     }
   }
 }

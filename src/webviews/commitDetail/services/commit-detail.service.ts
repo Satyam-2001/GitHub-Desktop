@@ -1,12 +1,16 @@
-import * as path from 'path';
-import * as vscode from 'vscode';
-import simpleGit from 'simple-git';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import { iconThemeService } from '../../../core/services/icon-theme.service';
-import { RepositoryManager } from '../../../core/repositories/repository-manager';
-import { getPrimaryRepository } from '../../../shared/utils/repo-selection';
-import { CommitDetail, CommitDetailFile, ICommitDetailService } from '../interfaces/commit-detail.interface';
+import * as path from "path";
+import * as vscode from "vscode";
+import simpleGit from "simple-git";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import { iconThemeService } from "../../../core/services/icon-theme.service";
+import { RepositoryManager } from "../../../core/repositories/repository-manager";
+import { getPrimaryRepository } from "../../../shared/utils/repo-selection";
+import {
+  CommitDetail,
+  CommitDetailFile,
+  ICommitDetailService,
+} from "../interfaces/commit-detail.interface";
 
 dayjs.extend(relativeTime);
 
@@ -15,13 +19,16 @@ export class CommitDetailService implements ICommitDetailService {
 
   constructor(
     private readonly context: vscode.ExtensionContext,
-    private readonly repositories: RepositoryManager
+    private readonly repositories: RepositoryManager,
   ) {}
 
-  async getCommitDetail(commitHash: string, webview?: vscode.Webview): Promise<CommitDetail> {
+  async getCommitDetail(
+    commitHash: string,
+    webview?: vscode.Webview,
+  ): Promise<CommitDetail> {
     const repository = getPrimaryRepository(this.repositories);
     if (!repository) {
-      throw new Error('No repository found');
+      throw new Error("No repository found");
     }
 
     try {
@@ -30,10 +37,10 @@ export class CommitDetailService implements ICommitDetailService {
       // Get commit info
       const commitInfo = await git.show([
         commitHash,
-        '--name-status',
-        '--format=%H%n%an%n%ae%n%ad%n%s%n%b',
+        "--name-status",
+        "--format=%H%n%an%n%ae%n%ad%n%s%n%b",
       ]);
-      const lines = commitInfo.split('\n');
+      const lines = commitInfo.split("\n");
 
       const fullHash = lines[0];
       const author = lines[1];
@@ -43,12 +50,12 @@ export class CommitDetailService implements ICommitDetailService {
 
       // Get file changes with statistics
       const stats = await git.raw([
-        'show',
+        "show",
         commitHash,
-        '--numstat',
-        '--format=',
+        "--numstat",
+        "--format=",
       ]);
-      const statLines = stats.split('\n').filter((line) => line.trim());
+      const statLines = stats.split("\n").filter((line) => line.trim());
 
       const files: CommitDetailFile[] = [];
       let totalAdditions = 0;
@@ -56,18 +63,18 @@ export class CommitDetailService implements ICommitDetailService {
 
       // Get file status
       const statusOutput = await git.raw([
-        'show',
+        "show",
         commitHash,
-        '--name-status',
-        '--format=',
+        "--name-status",
+        "--format=",
       ]);
       const statusLines = statusOutput
-        .split('\n')
+        .split("\n")
         .filter((line) => line.trim());
 
       const statusMap = new Map<string, string>();
       for (const line of statusLines) {
-        const [status, filePath] = line.split('\t');
+        const [status, filePath] = line.split("\t");
         if (filePath) {
           statusMap.set(filePath, status);
         }
@@ -75,12 +82,12 @@ export class CommitDetailService implements ICommitDetailService {
 
       // Parse numstat output
       for (const line of statLines) {
-        const [addStr, delStr, filePath] = line.split('\t');
+        const [addStr, delStr, filePath] = line.split("\t");
         if (!filePath) continue;
 
-        const additions = addStr === '-' ? 0 : parseInt(addStr, 10) || 0;
-        const deletions = delStr === '-' ? 0 : parseInt(delStr, 10) || 0;
-        const status = statusMap.get(filePath) || 'M';
+        const additions = addStr === "-" ? 0 : parseInt(addStr, 10) || 0;
+        const deletions = delStr === "-" ? 0 : parseInt(delStr, 10) || 0;
+        const status = statusMap.get(filePath) || "M";
 
         const iconInfo = webview
           ? await iconThemeService.getIconForFile(webview, filePath)
@@ -116,7 +123,7 @@ export class CommitDetailService implements ICommitDetailService {
   async createFileDiff(hash: string, filePath: string): Promise<void> {
     const repository = getPrimaryRepository(this.repositories);
     if (!repository || !hash || !filePath) {
-      throw new Error('Invalid parameters for file diff');
+      throw new Error("Invalid parameters for file diff");
     }
 
     try {
@@ -125,21 +132,21 @@ export class CommitDetailService implements ICommitDetailService {
       // Create temporary files for diff comparison
       const tempDir = vscode.Uri.joinPath(
         this.context.globalStorageUri,
-        'temp'
+        "temp",
       );
       await vscode.workspace.fs.createDirectory(tempDir);
 
       const oldTempFile = vscode.Uri.joinPath(
         tempDir,
-        `${hash}_old_${path.basename(filePath)}`
+        `${hash}_old_${path.basename(filePath)}`,
       );
       const newTempFile = vscode.Uri.joinPath(
         tempDir,
-        `${hash}_new_${path.basename(filePath)}`
+        `${hash}_new_${path.basename(filePath)}`,
       );
 
       // Get file content before and after commit
-      let oldContent = '';
+      let oldContent = "";
       try {
         oldContent = await git.show([`${hash}~1:${filePath}`]);
       } catch {
@@ -151,11 +158,11 @@ export class CommitDetailService implements ICommitDetailService {
       // Write temporary files
       await vscode.workspace.fs.writeFile(
         oldTempFile,
-        Buffer.from(oldContent, 'utf8')
+        Buffer.from(oldContent, "utf8"),
       );
       await vscode.workspace.fs.writeFile(
         newTempFile,
-        Buffer.from(newContent, 'utf8')
+        Buffer.from(newContent, "utf8"),
       );
 
       // Open diff in a specific dedicated column
@@ -163,10 +170,10 @@ export class CommitDetailService implements ICommitDetailService {
 
       // Use the native diff command - it will automatically reuse the column
       await vscode.commands.executeCommand(
-        'vscode.diff',
+        "vscode.diff",
         oldTempFile,
         newTempFile,
-        title
+        title,
       );
 
       // Show success message
@@ -178,11 +185,11 @@ export class CommitDetailService implements ICommitDetailService {
 
   private formatRelativeTime(date: Date): string {
     const dayjsDate = dayjs(date);
-    const diffInDays = dayjs().diff(dayjsDate, 'day');
+    const diffInDays = dayjs().diff(dayjsDate, "day");
 
     if (diffInDays > 30) {
       // For dates older than 30 days, show formatted date with time
-      return dayjsDate.format('D MMMM, YYYY [at] h:mm A');
+      return dayjsDate.format("D MMMM, YYYY [at] h:mm A");
     }
 
     return dayjsDate.fromNow();

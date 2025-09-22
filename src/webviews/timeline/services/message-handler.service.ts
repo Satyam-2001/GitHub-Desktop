@@ -1,12 +1,15 @@
-import * as path from 'path';
-import * as vscode from 'vscode';
-import simpleGit from 'simple-git';
-import { RepositoryManager } from '../../../core/repositories/repository-manager';
-import { AccountManager } from '../../../core/accounts/account-manager';
-import { getPrimaryRepository } from '../../../shared/utils/repo-selection';
-import { CommitDetailViewProvider } from '../../commitDetail/commit-detail-view-provider';
-import { WebviewMessage, FileIconInfo } from '../interfaces/timeline-view-provider.interface';
-import { GitOperationsService } from './git-operations.service';
+import * as path from "path";
+import * as vscode from "vscode";
+import simpleGit from "simple-git";
+import { RepositoryManager } from "../../../core/repositories/repository-manager";
+import { AccountManager } from "../../../core/accounts/account-manager";
+import { getPrimaryRepository } from "../../../shared/utils/repo-selection";
+import { CommitDetailViewProvider } from "../../commitDetail/commit-detail-view-provider";
+import {
+  WebviewMessage,
+  FileIconInfo,
+} from "../interfaces/timeline-view-provider.interface";
+import { GitOperationsService } from "./git-operations.service";
 
 export class MessageHandlerService {
   constructor(
@@ -15,113 +18,122 @@ export class MessageHandlerService {
     private readonly accounts: AccountManager,
     private readonly commitDetailProvider: CommitDetailViewProvider,
     private readonly gitService: GitOperationsService,
-    private readonly view: vscode.WebviewView
+    private readonly view: vscode.WebviewView,
   ) {}
 
   async handleMessage(message: WebviewMessage): Promise<void> {
     switch (message.command) {
-      case 'ready':
-      case 'refresh':
+      case "ready":
+      case "refresh":
         await this.handleRefresh();
         break;
-      case 'stageFiles':
+      case "stageFiles":
         await this.handleStageFiles(message.files);
         break;
-      case 'unstageFiles':
+      case "unstageFiles":
         await this.handleUnstageFiles(message.files);
         break;
-      case 'commit':
+      case "commit":
         await this.handleCommit(message.message);
         break;
-      case 'push':
+      case "push":
         await this.handlePush();
         break;
-      case 'pull':
+      case "pull":
         await this.handlePull();
         break;
-      case 'checkoutBranch':
+      case "checkoutBranch":
         await this.handleCheckoutBranch(message.branch);
         break;
-      case 'mergeBranch':
+      case "mergeBranch":
         await this.handleMergeBranch(message.fromBranch, message.toBranch);
         break;
-      case 'createPullRequest':
+      case "createPullRequest":
         await this.handleCreatePullRequest(message.branch);
         break;
-      case 'getCommitDetails':
+      case "getCommitDetails":
         await this.handleGetCommitDetails(message.hash);
         break;
-      case 'getFileDiff':
+      case "getFileDiff":
         await this.handleGetFileDiff(message.hash, message.filePath);
         break;
-      case 'openCommitDetail':
-        if (typeof message.hash === 'string') {
+      case "openCommitDetail":
+        if (typeof message.hash === "string") {
           await this.commitDetailProvider.showCommitDetails(message.hash);
         }
         break;
-      case 'resetToCommit':
-        if (typeof message.hash === 'string') {
+      case "resetToCommit":
+        if (typeof message.hash === "string") {
           await this.handleResetToCommit(message.hash);
         }
         break;
-      case 'checkoutCommit':
-        if (typeof message.hash === 'string') {
+      case "checkoutCommit":
+        if (typeof message.hash === "string") {
           await this.handleCheckoutCommit(message.hash);
         }
         break;
-      case 'revertCommit':
-        if (typeof message.hash === 'string') {
+      case "revertCommit":
+        if (typeof message.hash === "string") {
           await this.handleRevertCommit(message.hash);
         }
         break;
-      case 'createBranchFromCommit':
-        if (typeof message.hash === 'string') {
+      case "createBranchFromCommit":
+        if (typeof message.hash === "string") {
           await this.handleCreateBranchFromCommit(message.hash);
         }
         break;
-      case 'createTagFromCommit':
-        if (typeof message.hash === 'string') {
+      case "createTagFromCommit":
+        if (typeof message.hash === "string") {
           await this.handleCreateTagFromCommit(message.hash);
         }
         break;
-      case 'cherryPickCommit':
-        if (typeof message.hash === 'string') {
+      case "cherryPickCommit":
+        if (typeof message.hash === "string") {
           await this.handleCherryPickCommit(message.hash);
         }
         break;
-      case 'viewCommitOnGitHub':
-        if (typeof message.hash === 'string') {
+      case "viewCommitOnGitHub":
+        if (typeof message.hash === "string") {
           await this.handleViewCommitOnGitHub(message.hash);
         }
         break;
-      case 'createBranch':
-        if (typeof message.branchName === 'string') {
+      case "createBranch":
+        if (typeof message.branchName === "string") {
           await this.handleCreateBranch(message.branchName);
         }
         break;
-      case 'createBranchWithChanges':
-        if (typeof message.branchName === 'string' && typeof message.bringChanges === 'boolean') {
-          await this.handleCreateBranchWithChanges(message.branchName, message.bringChanges);
+      case "createBranchWithChanges":
+        if (
+          typeof message.branchName === "string" &&
+          typeof message.bringChanges === "boolean"
+        ) {
+          await this.handleCreateBranchWithChanges(
+            message.branchName,
+            message.bringChanges,
+          );
         }
         break;
-      case 'loadMoreCommits':
-        if (typeof message.offset === 'number') {
+      case "loadMoreCommits":
+        if (typeof message.offset === "number") {
           await this.handleLoadMoreCommits(message.offset);
         }
         break;
-      case 'fetch':
+      case "fetch":
         await this.handleFetch();
         break;
-      case 'publish':
+      case "publish":
         await this.handlePublish();
         break;
-      case 'selectCommit':
-        if (typeof message.hash === 'string') {
+      case "selectCommit":
+        if (typeof message.hash === "string") {
           await this.handleSelectCommit(message.hash);
         }
         break;
-      case 'selectFile':
-        if (typeof message.hash === 'string' && typeof message.path === 'string') {
+      case "selectFile":
+        if (
+          typeof message.hash === "string" &&
+          typeof message.path === "string"
+        ) {
           await this.handleSelectFile(message.hash, message.path);
         }
         break;
@@ -130,7 +142,9 @@ export class MessageHandlerService {
     }
   }
 
-  private async configureGitWithAuth(repositoryPath: string): Promise<any | null> {
+  private async configureGitWithAuth(
+    repositoryPath: string,
+  ): Promise<any | null> {
     const activeAccount = this.accounts.getActiveAccount();
     if (!activeAccount) {
       return null;
@@ -147,34 +161,42 @@ export class MessageHandlerService {
     try {
       // Get the repository info to determine the remote URL format
       const remotes = await git.getRemotes(true);
-      const origin = remotes.find(remote => remote.name === 'origin');
+      const origin = remotes.find((remote) => remote.name === "origin");
 
       if (origin && origin.refs.fetch) {
         let remoteUrl = origin.refs.fetch;
 
         // If it's a GitHub HTTPS URL, update it with the token
-        if (remoteUrl.includes('github.com')) {
+        if (remoteUrl.includes("github.com")) {
           // Convert SSH to HTTPS if necessary
-          if (remoteUrl.startsWith('git@github.com:')) {
-            remoteUrl = remoteUrl.replace('git@github.com:', 'https://github.com/');
-            if (!remoteUrl.endsWith('.git')) {
-              remoteUrl += '.git';
+          if (remoteUrl.startsWith("git@github.com:")) {
+            remoteUrl = remoteUrl.replace(
+              "git@github.com:",
+              "https://github.com/",
+            );
+            if (!remoteUrl.endsWith(".git")) {
+              remoteUrl += ".git";
             }
           }
 
           // Add authentication to HTTPS URL
-          if (remoteUrl.startsWith('https://github.com/')) {
+          if (remoteUrl.startsWith("https://github.com/")) {
             // For GitHub tokens, use the token as the password with any username (or 'x-access-token')
             // GitHub accepts both formats: username:token or x-access-token:token
             const urlWithAuth = remoteUrl.replace(
-              'https://github.com/',
-              `https://x-access-token:${encodeURIComponent(token)}@github.com/`
+              "https://github.com/",
+              `https://x-access-token:${encodeURIComponent(token)}@github.com/`,
             );
 
-            console.log('Configuring auth for:', activeAccount.login, 'on repo:', remoteUrl);
+            console.log(
+              "Configuring auth for:",
+              activeAccount.login,
+              "on repo:",
+              remoteUrl,
+            );
 
             // Temporarily update the remote URL for this operation
-            await git.remote(['set-url', 'origin', urlWithAuth]);
+            await git.remote(["set-url", "origin", urlWithAuth]);
 
             // Store original URL for cleanup
             const originalUrl = remoteUrl;
@@ -183,29 +205,29 @@ export class MessageHandlerService {
             const gitWithAuth = Object.create(git);
 
             // Override push method
-            gitWithAuth.push = async function(...args: any[]) {
+            gitWithAuth.push = async function (...args: any[]) {
               try {
                 const result = await git.push(...args);
                 // Restore original URL after successful push
-                await git.remote(['set-url', 'origin', originalUrl]);
+                await git.remote(["set-url", "origin", originalUrl]);
                 return result;
               } catch (error) {
                 // Restore original URL even on error
-                await git.remote(['set-url', 'origin', originalUrl]);
+                await git.remote(["set-url", "origin", originalUrl]);
                 throw error;
               }
             };
 
             // Override pull method
-            gitWithAuth.pull = async function(...args: any[]) {
+            gitWithAuth.pull = async function (...args: any[]) {
               try {
                 const result = await git.pull(...args);
                 // Restore original URL after successful pull
-                await git.remote(['set-url', 'origin', originalUrl]);
+                await git.remote(["set-url", "origin", originalUrl]);
                 return result;
               } catch (error) {
                 // Restore original URL even on error
-                await git.remote(['set-url', 'origin', originalUrl]);
+                await git.remote(["set-url", "origin", originalUrl]);
                 throw error;
               }
             };
@@ -215,7 +237,7 @@ export class MessageHandlerService {
         }
       }
     } catch (error) {
-      console.error('Failed to configure git with auth:', error);
+      console.error("Failed to configure git with auth:", error);
     }
 
     // Return regular git instance if no special auth needed
@@ -227,40 +249,40 @@ export class MessageHandlerService {
       const data = await this.gitService.getRepositoryData();
       if (!data) {
         this.view.webview.postMessage({
-          command: 'updateRepository',
-          repository: null
+          command: "updateRepository",
+          repository: null,
         });
         return;
       }
 
       this.view.webview.postMessage({
-        command: 'updateChanges',
-        changes: data.changes
+        command: "updateChanges",
+        changes: data.changes,
       });
 
       this.view.webview.postMessage({
-        command: 'updateHistory',
+        command: "updateHistory",
         history: data.commits,
         hasMoreCommits: data.hasMoreCommits,
-        offset: 0
+        offset: 0,
       });
 
       this.view.webview.postMessage({
-        command: 'updateBranches',
+        command: "updateBranches",
         branches: data.branches,
         currentBranch: data.currentBranch,
-        branchActivity: data.branchActivity
+        branchActivity: data.branchActivity,
       });
 
       this.view.webview.postMessage({
-        command: 'updateRepository',
-        repository: data.repository
+        command: "updateRepository",
+        repository: data.repository,
       });
 
       this.view.webview.postMessage({
-        command: 'updateRemoteStatus',
+        command: "updateRemoteStatus",
         remoteStatus: data.remoteStatus,
-        tags: data.tags
+        tags: data.tags,
       });
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to refresh: ${error}`);
@@ -286,7 +308,7 @@ export class MessageHandlerService {
 
     try {
       const git = simpleGit(repository.localPath);
-      await git.reset(['HEAD', ...files]);
+      await git.reset(["HEAD", ...files]);
       await this.handleRefresh();
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to unstage files: ${error}`);
@@ -301,7 +323,7 @@ export class MessageHandlerService {
       const git = simpleGit(repository.localPath);
       await git.commit(message);
       await this.handleRefresh();
-      vscode.window.showInformationMessage('Commit created successfully');
+      vscode.window.showInformationMessage("Commit created successfully");
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to commit: ${error}`);
     }
@@ -310,26 +332,37 @@ export class MessageHandlerService {
   private async handlePush(): Promise<void> {
     const repository = getPrimaryRepository(this.repositories);
     if (!repository) {
-      vscode.window.showErrorMessage('No repository found in the current workspace');
+      vscode.window.showErrorMessage(
+        "No repository found in the current workspace",
+      );
       return;
     }
 
     try {
       // Log repository info for debugging
-      console.log('Pushing to repository:', repository.name, 'at', repository.localPath);
+      console.log(
+        "Pushing to repository:",
+        repository.name,
+        "at",
+        repository.localPath,
+      );
 
       const git = await this.configureGitWithAuth(repository.localPath);
       if (!git) {
-        vscode.window.showErrorMessage('No authenticated GitHub account found. Please sign in first.');
+        vscode.window.showErrorMessage(
+          "No authenticated GitHub account found. Please sign in first.",
+        );
         return;
       }
 
       await git.push();
       await this.handleRefresh(); // Refresh all data including remote status
-      vscode.window.showInformationMessage('Pushed successfully');
+      vscode.window.showInformationMessage("Pushed successfully");
     } catch (error: any) {
-      console.error('Push failed with error:', error);
-      vscode.window.showErrorMessage(`Failed to push: ${error.message || error}`);
+      console.error("Push failed with error:", error);
+      vscode.window.showErrorMessage(
+        `Failed to push: ${error.message || error}`,
+      );
     }
   }
 
@@ -340,13 +373,15 @@ export class MessageHandlerService {
     try {
       const git = await this.configureGitWithAuth(repository.localPath);
       if (!git) {
-        vscode.window.showErrorMessage('No authenticated GitHub account found. Please sign in first.');
+        vscode.window.showErrorMessage(
+          "No authenticated GitHub account found. Please sign in first.",
+        );
         return;
       }
 
       await git.pull();
       await this.handleRefresh();
-      vscode.window.showInformationMessage('Pulled successfully');
+      vscode.window.showInformationMessage("Pulled successfully");
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to pull: ${error}`);
     }
@@ -366,7 +401,10 @@ export class MessageHandlerService {
     }
   }
 
-  private async handleMergeBranch(fromBranch: string, toBranch: string): Promise<void> {
+  private async handleMergeBranch(
+    fromBranch: string,
+    toBranch: string,
+  ): Promise<void> {
     const repository = getPrimaryRepository(this.repositories);
     if (!repository || !fromBranch || !toBranch) return;
 
@@ -375,7 +413,9 @@ export class MessageHandlerService {
       await git.checkout(toBranch);
       await git.merge([fromBranch]);
       await this.handleRefresh();
-      vscode.window.showInformationMessage(`Successfully merged ${fromBranch} into ${toBranch}`);
+      vscode.window.showInformationMessage(
+        `Successfully merged ${fromBranch} into ${toBranch}`,
+      );
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to merge branches: ${error}`);
     }
@@ -389,14 +429,16 @@ export class MessageHandlerService {
       const repoUrl = repository.remoteUrl;
       if (repoUrl) {
         const githubUrl = repoUrl
-          .replace(/^git@github\.com:/, 'https://github.com/')
-          .replace(/\.git$/, '');
+          .replace(/^git@github\.com:/, "https://github.com/")
+          .replace(/\.git$/, "");
 
         const prUrl = `${githubUrl}/compare/${branchName}?expand=1`;
         vscode.env.openExternal(vscode.Uri.parse(prUrl));
-        vscode.window.showInformationMessage(`Opening pull request creation for ${branchName}`);
+        vscode.window.showInformationMessage(
+          `Opening pull request creation for ${branchName}`,
+        );
       } else {
-        vscode.window.showWarningMessage('No remote repository configured');
+        vscode.window.showWarningMessage("No remote repository configured");
       }
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to create pull request: ${error}`);
@@ -407,39 +449,46 @@ export class MessageHandlerService {
     try {
       const detail = await this.gitService.getCommitDetail(hash);
       this.view.webview.postMessage({
-        type: 'commitDetail',
-        payload: detail
+        type: "commitDetail",
+        payload: detail,
       });
     } catch (error) {
       this.view.webview.postMessage({
-        type: 'error',
-        message: error instanceof Error ? error.message : 'Failed to load commit details.'
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to load commit details.",
       });
     }
   }
 
-  private async handleGetFileDiff(hash: string, filePath: string): Promise<void> {
+  private async handleGetFileDiff(
+    hash: string,
+    filePath: string,
+  ): Promise<void> {
     const repository = getPrimaryRepository(this.repositories);
     if (!repository) return;
 
     try {
       const git = simpleGit(repository.localPath);
-      let diff = await git.raw(['show', hash, '--patch', '--', filePath]);
+      let diff = await git.raw(["show", hash, "--patch", "--", filePath]);
       if (!diff.trim()) {
-        diff = await git.raw(['show', hash, '--', filePath]);
+        diff = await git.raw(["show", hash, "--", filePath]);
       }
 
       this.view.webview.postMessage({
-        type: 'fileDiff',
+        type: "fileDiff",
         payload: {
           path: filePath,
-          diff
-        }
+          diff,
+        },
       });
     } catch (error) {
       this.view.webview.postMessage({
-        type: 'error',
-        message: error instanceof Error ? error.message : 'Failed to load file diff.'
+        type: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to load file diff.",
       });
     }
   }
@@ -451,15 +500,17 @@ export class MessageHandlerService {
     const confirm = await vscode.window.showWarningMessage(
       `Are you sure you want to reset to commit ${hash.substring(0, 7)}? This will discard all changes after this commit.`,
       { modal: true },
-      'Reset',
-      'Cancel'
+      "Reset",
+      "Cancel",
     );
 
-    if (confirm === 'Reset') {
+    if (confirm === "Reset") {
       try {
         const git = simpleGit(repository.localPath);
-        await git.reset(['--hard', hash]);
-        vscode.window.showInformationMessage(`Reset to commit ${hash.substring(0, 7)}`);
+        await git.reset(["--hard", hash]);
+        vscode.window.showInformationMessage(
+          `Reset to commit ${hash.substring(0, 7)}`,
+        );
         await this.handleRefresh();
       } catch (error) {
         vscode.window.showErrorMessage(`Failed to reset: ${error}`);
@@ -474,7 +525,9 @@ export class MessageHandlerService {
     try {
       const git = simpleGit(repository.localPath);
       await git.checkout(hash);
-      vscode.window.showInformationMessage(`Checked out commit ${hash.substring(0, 7)}`);
+      vscode.window.showInformationMessage(
+        `Checked out commit ${hash.substring(0, 7)}`,
+      );
       await this.handleRefresh();
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to checkout commit: ${error}`);
@@ -487,8 +540,10 @@ export class MessageHandlerService {
 
     try {
       const git = simpleGit(repository.localPath);
-      await git.revert(hash, ['--no-edit']);
-      vscode.window.showInformationMessage(`Reverted commit ${hash.substring(0, 7)}`);
+      await git.revert(hash, ["--no-edit"]);
+      vscode.window.showInformationMessage(
+        `Reverted commit ${hash.substring(0, 7)}`,
+      );
       await this.handleRefresh();
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to revert commit: ${error}`);
@@ -497,9 +552,9 @@ export class MessageHandlerService {
 
   private async handleCreateBranchFromCommit(hash: string): Promise<void> {
     const branchName = await vscode.window.showInputBox({
-      prompt: 'Enter new branch name',
-      placeHolder: 'feature-branch-name',
-      ignoreFocusOut: true
+      prompt: "Enter new branch name",
+      placeHolder: "feature-branch-name",
+      ignoreFocusOut: true,
     });
 
     if (!branchName) return;
@@ -510,7 +565,9 @@ export class MessageHandlerService {
     try {
       const git = simpleGit(repository.localPath);
       await git.checkoutBranch(branchName, hash);
-      vscode.window.showInformationMessage(`Created branch '${branchName}' from commit ${hash.substring(0, 7)}`);
+      vscode.window.showInformationMessage(
+        `Created branch '${branchName}' from commit ${hash.substring(0, 7)}`,
+      );
       await this.handleRefresh();
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to create branch: ${error}`);
@@ -519,14 +576,15 @@ export class MessageHandlerService {
 
   private async handleCreateTagFromCommit(hash: string): Promise<void> {
     const tagName = await vscode.window.showInputBox({
-      prompt: 'Enter tag name (e.g., v1.0.0)',
-      placeHolder: 'v1.0.0',
+      prompt: "Enter tag name (e.g., v1.0.0)",
+      placeHolder: "v1.0.0",
       ignoreFocusOut: true,
       validateInput: (value) => {
-        if (!value) return 'Tag name is required';
-        if (!/^[a-zA-Z0-9._-]+$/.test(value)) return 'Tag name contains invalid characters';
+        if (!value) return "Tag name is required";
+        if (!/^[a-zA-Z0-9._-]+$/.test(value))
+          return "Tag name contains invalid characters";
         return null;
-      }
+      },
     });
 
     if (!tagName) return;
@@ -537,17 +595,21 @@ export class MessageHandlerService {
     try {
       const git = await this.configureGitWithAuth(repository.localPath);
       if (!git) {
-        vscode.window.showErrorMessage('No authenticated GitHub account found. Please sign in first.');
+        vscode.window.showErrorMessage(
+          "No authenticated GitHub account found. Please sign in first.",
+        );
         return;
       }
 
       // Create annotated tag with default message
-      await git.raw(['tag', '-a', tagName, hash, '-m', `Release ${tagName}`]);
+      await git.raw(["tag", "-a", tagName, hash, "-m", `Release ${tagName}`]);
 
       // Push the tag to remote
-      await git.pushTags('origin');
+      await git.pushTags("origin");
 
-      vscode.window.showInformationMessage(`Created and pushed tag '${tagName}' to GitHub`);
+      vscode.window.showInformationMessage(
+        `Created and pushed tag '${tagName}' to GitHub`,
+      );
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to create tag: ${error}`);
     }
@@ -559,8 +621,10 @@ export class MessageHandlerService {
 
     try {
       const git = simpleGit(repository.localPath);
-      await git.raw(['cherry-pick', hash]);
-      vscode.window.showInformationMessage(`Cherry-picked commit ${hash.substring(0, 7)}`);
+      await git.raw(["cherry-pick", hash]);
+      vscode.window.showInformationMessage(
+        `Cherry-picked commit ${hash.substring(0, 7)}`,
+      );
       await this.handleRefresh();
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to cherry-pick commit: ${error}`);
@@ -570,14 +634,14 @@ export class MessageHandlerService {
   private async handleViewCommitOnGitHub(hash: string): Promise<void> {
     const repository = getPrimaryRepository(this.repositories);
     if (!repository?.remoteUrl) {
-      vscode.window.showWarningMessage('No GitHub remote found');
+      vscode.window.showWarningMessage("No GitHub remote found");
       return;
     }
 
     try {
       const githubUrl = repository.remoteUrl
-        .replace(/^git@github\.com:/, 'https://github.com/')
-        .replace(/\.git$/, '');
+        .replace(/^git@github\.com:/, "https://github.com/")
+        .replace(/\.git$/, "");
 
       const commitUrl = `${githubUrl}/commit/${hash}`;
       vscode.env.openExternal(vscode.Uri.parse(commitUrl));
@@ -593,14 +657,19 @@ export class MessageHandlerService {
     try {
       const git = simpleGit(repository.localPath);
       await git.checkoutLocalBranch(branchName);
-      vscode.window.showInformationMessage(`Created and switched to branch '${branchName}'`);
+      vscode.window.showInformationMessage(
+        `Created and switched to branch '${branchName}'`,
+      );
       await this.handleRefresh();
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to create branch: ${error}`);
     }
   }
 
-  private async handleCreateBranchWithChanges(branchName: string, bringChanges: boolean): Promise<void> {
+  private async handleCreateBranchWithChanges(
+    branchName: string,
+    bringChanges: boolean,
+  ): Promise<void> {
     const repository = getPrimaryRepository(this.repositories);
     if (!repository || !branchName) return;
 
@@ -609,16 +678,22 @@ export class MessageHandlerService {
 
       if (bringChanges) {
         await git.checkoutLocalBranch(branchName);
-        vscode.window.showInformationMessage(`Created branch '${branchName}' with uncommitted changes`);
+        vscode.window.showInformationMessage(
+          `Created branch '${branchName}' with uncommitted changes`,
+        );
       } else {
-        await git.stash(['push', '-m', 'Auto-stash before branch creation']);
+        await git.stash(["push", "-m", "Auto-stash before branch creation"]);
         await git.checkoutLocalBranch(branchName);
-        vscode.window.showInformationMessage(`Created branch '${branchName}' and stashed changes`);
+        vscode.window.showInformationMessage(
+          `Created branch '${branchName}' and stashed changes`,
+        );
       }
 
       await this.handleRefresh();
     } catch (error) {
-      vscode.window.showErrorMessage(`Failed to create branch with changes: ${error}`);
+      vscode.window.showErrorMessage(
+        `Failed to create branch with changes: ${error}`,
+      );
     }
   }
 
@@ -626,10 +701,10 @@ export class MessageHandlerService {
     try {
       const result = await this.gitService.loadMoreCommits(offset);
       this.view.webview.postMessage({
-        command: 'loadMoreCommitsResponse',
+        command: "loadMoreCommitsResponse",
         history: result.commits,
         hasMoreCommits: result.hasMoreCommits,
-        offset: result.newOffset
+        offset: result.newOffset,
       });
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to load more commits: ${error}`);
@@ -640,39 +715,46 @@ export class MessageHandlerService {
     try {
       const detail = await this.gitService.getCommitDetail(hash);
       this.view.webview.postMessage({
-        type: 'commitDetail',
-        payload: detail
+        type: "commitDetail",
+        payload: detail,
       });
     } catch (error) {
       this.view.webview.postMessage({
-        type: 'error',
-        message: error instanceof Error ? error.message : 'Failed to load commit details.'
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to load commit details.",
       });
     }
   }
 
-  private async handleSelectFile(hash: string, filePath: string): Promise<void> {
+  private async handleSelectFile(
+    hash: string,
+    filePath: string,
+  ): Promise<void> {
     const repository = getPrimaryRepository(this.repositories);
     if (!repository) return;
 
     try {
       const git = simpleGit(repository.localPath);
-      let diff = await git.raw(['show', hash, '--patch', '--', filePath]);
+      let diff = await git.raw(["show", hash, "--patch", "--", filePath]);
       if (!diff.trim()) {
-        diff = await git.raw(['show', hash, '--', filePath]);
+        diff = await git.raw(["show", hash, "--", filePath]);
       }
 
       this.view.webview.postMessage({
-        type: 'fileDiff',
+        type: "fileDiff",
         payload: {
           path: filePath,
-          diff
-        }
+          diff,
+        },
       });
     } catch (error) {
       this.view.webview.postMessage({
-        type: 'error',
-        message: error instanceof Error ? error.message : 'Failed to load file diff.'
+        type: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to load file diff.",
       });
     }
   }
@@ -684,7 +766,7 @@ export class MessageHandlerService {
     try {
       const git = simpleGit(repository.localPath);
       await git.fetch();
-      vscode.window.showInformationMessage('Fetched from remote successfully');
+      vscode.window.showInformationMessage("Fetched from remote successfully");
       await this.handleRefresh();
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to fetch: ${error}`);
@@ -701,20 +783,22 @@ export class MessageHandlerService {
       const currentBranch = branch.current;
 
       if (!currentBranch) {
-        vscode.window.showErrorMessage('No branch selected');
+        vscode.window.showErrorMessage("No branch selected");
         return;
       }
 
       // Check if we have a remote
       const remotes = await git.getRemotes(true);
       if (remotes.length === 0) {
-        vscode.window.showErrorMessage('No remote repository configured');
+        vscode.window.showErrorMessage("No remote repository configured");
         return;
       }
 
       const defaultRemote = remotes[0].name;
-      await git.push(['-u', defaultRemote, currentBranch]);
-      vscode.window.showInformationMessage(`Published branch '${currentBranch}' to ${defaultRemote}`);
+      await git.push(["-u", defaultRemote, currentBranch]);
+      vscode.window.showInformationMessage(
+        `Published branch '${currentBranch}' to ${defaultRemote}`,
+      );
       await this.handleRefresh();
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to publish branch: ${error}`);

@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
 export class CommitDetailHtmlService {
   constructor(private readonly context: vscode.ExtensionContext) {}
@@ -7,10 +7,10 @@ export class CommitDetailHtmlService {
     const reactAppUri = webview.asWebviewUri(
       vscode.Uri.joinPath(
         this.context.extensionUri,
-        'out',
-        'webview',
-        'commit-detail.js'
-      )
+        "out",
+        "webview",
+        "commit-detail.js",
+      ),
     );
 
     return `<!DOCTYPE html>

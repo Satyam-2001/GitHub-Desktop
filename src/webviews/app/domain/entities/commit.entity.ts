@@ -1,8 +1,8 @@
-import { CommitId } from '../value-objects/commit-id.vo';
-import { CommitMessage } from '../value-objects/commit-message.vo';
-import { Author } from '../value-objects/author.vo';
-import { CommitDate } from '../value-objects/commit-date.vo';
-import { FileChange } from './file-change.entity';
+import { CommitId } from "../value-objects/commit-id.vo";
+import { CommitMessage } from "../value-objects/commit-message.vo";
+import { Author } from "../value-objects/author.vo";
+import { CommitDate } from "../value-objects/commit-date.vo";
+import { FileChange } from "./file-change.entity";
 
 export class Commit {
   constructor(
@@ -13,7 +13,7 @@ export class Commit {
     public readonly files: FileChange[] = [],
     public readonly avatarUrl?: string,
     public readonly tags?: string[],
-    public readonly isPushed: boolean = true
+    public readonly isPushed: boolean = true,
   ) {}
 
   get shortHash(): string {
@@ -51,12 +51,12 @@ export class Commit {
       author: this.author.name,
       email: this.author.email,
       date: this.date.formatted,
-      files: this.files.map(f => f.toJSON()),
+      files: this.files.map((f) => f.toJSON()),
       totalAdditions: this.totalAdditions,
       totalDeletions: this.totalDeletions,
       avatarUrl: this.avatarUrl,
       tags: this.tags,
-      isPushed: this.isPushed
+      isPushed: this.isPushed,
     };
   }
 }

@@ -1,21 +1,21 @@
 export class Author {
   constructor(
     public readonly name: string,
-    public readonly email: string
+    public readonly email: string,
   ) {
     if (!name || name.trim().length === 0) {
-      throw new Error('Author name cannot be empty');
+      throw new Error("Author name cannot be empty");
     }
     if (!email || !this.isValidEmail(email)) {
-      throw new Error('Invalid email address');
+      throw new Error("Invalid email address");
     }
   }
 
   get initials(): string {
     return this.name
-      .split(' ')
-      .map(part => (part || '').charAt(0).toUpperCase())
-      .join('')
+      .split(" ")
+      .map((part) => (part || "").charAt(0).toUpperCase())
+      .join("")
       .substring(0, 2);
   }
 

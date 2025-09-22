@@ -1,11 +1,14 @@
-import * as vscode from 'vscode';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import { RepositoryManager } from '../../core/repositories/repository-manager';
-import { ICommitDetailViewProvider, CommitDetailMessage } from './interfaces/commit-detail.interface';
-import { CommitDetailService } from './services/commit-detail.service';
-import { CommitDetailHtmlService } from './services/commit-detail-html.service';
-import { CommitDetailMessageHandlerService } from './services/commit-detail-message-handler.service';
+import * as vscode from "vscode";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import { RepositoryManager } from "../../core/repositories/repository-manager";
+import {
+  ICommitDetailViewProvider,
+  CommitDetailMessage,
+} from "./interfaces/commit-detail.interface";
+import { CommitDetailService } from "./services/commit-detail.service";
+import { CommitDetailHtmlService } from "./services/commit-detail-html.service";
+import { CommitDetailMessageHandlerService } from "./services/commit-detail-message-handler.service";
 
 dayjs.extend(relativeTime);
 
@@ -18,7 +21,7 @@ export class CommitDetailViewProvider implements ICommitDetailViewProvider {
 
   constructor(
     private readonly context: vscode.ExtensionContext,
-    private readonly repositories: RepositoryManager
+    private readonly repositories: RepositoryManager,
   ) {
     this.commitDetailService = new CommitDetailService(context, repositories);
     this.htmlService = new CommitDetailHtmlService(context);
@@ -48,22 +51,22 @@ export class CommitDetailViewProvider implements ICommitDetailViewProvider {
 
   private async createPanel(): Promise<void> {
     this.panel = vscode.window.createWebviewPanel(
-      'commitDetail',
-      `Commit: ${this.commitHash?.substring(0, 7) || 'Details'}`,
+      "commitDetail",
+      `Commit: ${this.commitHash?.substring(0, 7) || "Details"}`,
       vscode.ViewColumn.Active, // Open in the currently active column
       {
         enableScripts: true,
         localResourceRoots: [
-          vscode.Uri.joinPath(this.context.extensionUri, 'out', 'webview'),
+          vscode.Uri.joinPath(this.context.extensionUri, "out", "webview"),
           vscode.Uri.joinPath(
             this.context.extensionUri,
-            'out',
-            'webview',
-            'assets'
+            "out",
+            "webview",
+            "assets",
           ),
-          vscode.Uri.joinPath(this.context.extensionUri, 'out'),
+          vscode.Uri.joinPath(this.context.extensionUri, "out"),
         ],
-      }
+      },
     );
 
     this.setupPanel();
@@ -84,11 +87,13 @@ export class CommitDetailViewProvider implements ICommitDetailViewProvider {
     });
 
     // Handle messages from webview
-    this.panel.webview.onDidReceiveMessage(async (message: CommitDetailMessage) => {
-      if (this.messageHandler) {
-        await this.messageHandler.handleMessage(message);
-      }
-    });
+    this.panel.webview.onDidReceiveMessage(
+      async (message: CommitDetailMessage) => {
+        if (this.messageHandler) {
+          await this.messageHandler.handleMessage(message);
+        }
+      },
+    );
   }
 
   private updateMessageHandler(): void {
@@ -98,14 +103,14 @@ export class CommitDetailViewProvider implements ICommitDetailViewProvider {
     this.messageHandler = new CommitDetailMessageHandlerService(
       this.commitDetailService,
       this.panel,
-      this.commitHash
+      this.commitHash,
     );
   }
 
   private async loadCommitDetails(): Promise<void> {
     if (!this.commitHash || !this.messageHandler) return;
 
-    await this.messageHandler.handleMessage({ command: 'ready' });
+    await this.messageHandler.handleMessage({ command: "ready" });
   }
 
   // Legacy methods for backward compatibility
@@ -120,10 +125,10 @@ export class CommitDetailViewProvider implements ICommitDetailViewProvider {
   public formatRelativeTime(date: Date): string {
     // This method is now handled internally by the service, but kept for compatibility
     const dayjsDate = dayjs(date);
-    const diffInDays = dayjs().diff(dayjsDate, 'day');
+    const diffInDays = dayjs().diff(dayjsDate, "day");
 
     if (diffInDays > 30) {
-      return dayjsDate.format('D MMMM, YYYY [at] h:mm A');
+      return dayjsDate.format("D MMMM, YYYY [at] h:mm A");
     }
 
     return dayjsDate.fromNow();

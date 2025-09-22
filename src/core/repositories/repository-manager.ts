@@ -1,8 +1,8 @@
-import * as vscode from 'vscode';
-import { randomUUID } from 'crypto';
-import { TrackedRepository } from '../../shared/types';
+import * as vscode from "vscode";
+import { randomUUID } from "crypto";
+import { TrackedRepository } from "../../shared/types";
 
-const REPOSITORIES_KEY = 'githubDesktop.repositories';
+const REPOSITORIES_KEY = "githubDesktop.repositories";
 
 export class RepositoryManager {
   private repositories: TrackedRepository[] = [];
@@ -13,7 +13,10 @@ export class RepositoryManager {
   constructor(private readonly globalState: vscode.Memento) {}
 
   async initialize(): Promise<void> {
-    this.repositories = this.globalState.get<TrackedRepository[]>(REPOSITORIES_KEY, []);
+    this.repositories = this.globalState.get<TrackedRepository[]>(
+      REPOSITORIES_KEY,
+      [],
+    );
   }
 
   getRepositories(accountId?: string): TrackedRepository[] {
@@ -27,10 +30,15 @@ export class RepositoryManager {
     return this.repositories.find((repo) => repo.localPath === path);
   }
 
-  async addRepository(partial: Omit<TrackedRepository, 'id'>): Promise<TrackedRepository> {
-    const existing = this.repositories.find((repo) =>
-      repo.localPath === partial.localPath ||
-      (!!repo.remoteUrl && !!partial.remoteUrl && repo.remoteUrl === partial.remoteUrl)
+  async addRepository(
+    partial: Omit<TrackedRepository, "id">,
+  ): Promise<TrackedRepository> {
+    const existing = this.repositories.find(
+      (repo) =>
+        repo.localPath === partial.localPath ||
+        (!!repo.remoteUrl &&
+          !!partial.remoteUrl &&
+          repo.remoteUrl === partial.remoteUrl),
     );
     if (existing) {
       const updated = Object.assign(existing, partial);
@@ -41,7 +49,7 @@ export class RepositoryManager {
 
     const repository: TrackedRepository = {
       id: randomUUID(),
-      ...partial
+      ...partial,
     };
     this.repositories.push(repository);
     await this.persist();
@@ -49,7 +57,10 @@ export class RepositoryManager {
     return repository;
   }
 
-  async updateRepository(id: string, updates: Partial<TrackedRepository>): Promise<TrackedRepository | undefined> {
+  async updateRepository(
+    id: string,
+    updates: Partial<TrackedRepository>,
+  ): Promise<TrackedRepository | undefined> {
     const repo = this.repositories.find((candidate) => candidate.id === id);
     if (!repo) {
       return undefined;

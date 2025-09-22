@@ -6,7 +6,7 @@ export const formatCommitDate = (dateString: string): string => {
   dayjs.extend(relativeTime);
 
   // Handle undefined or null dateString
-  const safeDateString = dateString || '';
+  const safeDateString = dateString || "";
 
   // If it's already a relative format (contains "ago"), return as is
   if (safeDateString.includes("ago") || safeDateString.includes("just now")) {
@@ -18,7 +18,7 @@ export const formatCommitDate = (dateString: string): string => {
 
   // Check if it's a valid date
   if (!date.isValid()) {
-    return safeDateString || 'Invalid date'; // Return original if parsing fails
+    return safeDateString || "Invalid date"; // Return original if parsing fails
   }
 
   const now = dayjs();

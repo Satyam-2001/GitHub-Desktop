@@ -1,5 +1,5 @@
-import { FilePath } from '../value-objects/file-path.vo';
-import { FileStatus } from '../value-objects/file-status.vo';
+import { FilePath } from "../value-objects/file-path.vo";
+import { FileStatus } from "../value-objects/file-status.vo";
 
 export class FileChange {
   constructor(
@@ -8,7 +8,7 @@ export class FileChange {
     public readonly additions: number = 0,
     public readonly deletions: number = 0,
     public readonly iconClass?: string,
-    public readonly iconUri?: string
+    public readonly iconUri?: string,
   ) {}
 
   get fileName(): string {
@@ -46,7 +46,7 @@ export class FileChange {
       additions: this.additions,
       deletions: this.deletions,
       iconClass: this.iconClass,
-      iconUri: this.iconUri
+      iconUri: this.iconUri,
     };
   }
 }

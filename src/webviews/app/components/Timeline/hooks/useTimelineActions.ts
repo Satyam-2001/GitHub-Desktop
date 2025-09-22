@@ -1,5 +1,5 @@
-import { VSCodeBridge, GitChange, GitCommit } from '../../../bridge';
-import { ContextMenuState } from '../types/timeline.types';
+import { VSCodeBridge, GitChange, GitCommit } from "../../../bridge";
+import { ContextMenuState } from "../types/timeline.types";
 
 interface UseTimelineActionsProps {
   bridge: VSCodeBridge;
@@ -38,7 +38,6 @@ export const useTimelineActions = ({
   setIsLoadingMore,
   setSelectedCommitHash,
 }: UseTimelineActionsProps) => {
-
   const handleFileToggle = (filePath: string) => {
     const newSelected = new Set(selectedFiles);
     if (newSelected.has(filePath)) {
@@ -50,32 +49,32 @@ export const useTimelineActions = ({
   };
 
   const handleStageFiles = () => {
-    bridge.sendMessage('stageFiles', { files: Array.from(selectedFiles) });
+    bridge.sendMessage("stageFiles", { files: Array.from(selectedFiles) });
     setSelectedFiles(new Set());
   };
 
   const handleUnstageFiles = () => {
-    bridge.sendMessage('unstageFiles', { files: Array.from(selectedFiles) });
+    bridge.sendMessage("unstageFiles", { files: Array.from(selectedFiles) });
     setSelectedFiles(new Set());
   };
 
   const handleCommit = () => {
     if (commitMessage.trim()) {
-      bridge.sendMessage('commit', { message: commitMessage });
-      setCommitMessage('');
+      bridge.sendMessage("commit", { message: commitMessage });
+      setCommitMessage("");
     }
   };
 
   const handlePush = () => {
-    bridge.sendMessage('push');
+    bridge.sendMessage("push");
   };
 
   const handlePull = () => {
-    bridge.sendMessage('pull');
+    bridge.sendMessage("pull");
   };
 
   const handleRefresh = () => {
-    bridge.sendMessage('refresh');
+    bridge.sendMessage("refresh");
   };
 
   const handleCreateNewBranch = () => {
@@ -91,43 +90,46 @@ export const useTimelineActions = ({
     setUncommittedChangesDialog(false);
 
     if (bringChanges) {
-      bridge.sendMessage('createBranchWithChanges', {
+      bridge.sendMessage("createBranchWithChanges", {
         branchName: newBranchName,
-        bringChanges: true
+        bringChanges: true,
       });
     } else {
-      bridge.sendMessage('createBranchWithChanges', {
+      bridge.sendMessage("createBranchWithChanges", {
         branchName: newBranchName,
-        bringChanges: false
+        bringChanges: false,
       });
     }
 
-    setNewBranchName('');
+    setNewBranchName("");
     setNewBranchDialog(true);
   };
 
   const handleConfirmCreateBranch = () => {
     if (newBranchName.trim()) {
-      bridge.sendMessage('createBranch', { branchName: newBranchName.trim() });
+      bridge.sendMessage("createBranch", { branchName: newBranchName.trim() });
       setNewBranchDialog(false);
-      setNewBranchName('');
+      setNewBranchName("");
     }
   };
 
   const handleLoadMoreCommits = () => {
     if (!isLoadingMore && hasMoreCommits) {
       setIsLoadingMore(true);
-      bridge.sendMessage('loadMoreCommits', { offset: allCommits.length });
+      bridge.sendMessage("loadMoreCommits", { offset: allCommits.length });
     }
   };
 
   const handleCommitSelect = (commit: GitCommit) => {
-    console.log('Selecting commit:', commit.hash);
+    console.log("Selecting commit:", commit.hash);
     setSelectedCommitHash(commit.hash);
-    bridge.sendMessage('openCommitDetail', { hash: commit.hash });
+    bridge.sendMessage("openCommitDetail", { hash: commit.hash });
   };
 
-  const handleCommitContextMenu = (event: React.MouseEvent, commit: GitCommit) => {
+  const handleCommitContextMenu = (
+    event: React.MouseEvent,
+    commit: GitCommit,
+  ) => {
     event.preventDefault();
     setContextMenu({
       mouseX: event.clientX + 2,
@@ -142,40 +144,41 @@ export const useTimelineActions = ({
 
   const handleContextMenuAction = (action: string, commit: GitCommit) => {
     switch (action) {
-      case 'reset':
-        bridge.sendMessage('resetToCommit', { hash: commit.hash });
+      case "reset":
+        bridge.sendMessage("resetToCommit", { hash: commit.hash });
         break;
-      case 'checkout':
-        bridge.sendMessage('checkoutCommit', { hash: commit.hash });
+      case "checkout":
+        bridge.sendMessage("checkoutCommit", { hash: commit.hash });
         break;
-      case 'reorder':
-        bridge.sendMessage('reorderCommit', { hash: commit.hash });
+      case "reorder":
+        bridge.sendMessage("reorderCommit", { hash: commit.hash });
         break;
-      case 'revert':
-        bridge.sendMessage('revertCommit', { hash: commit.hash });
+      case "revert":
+        bridge.sendMessage("revertCommit", { hash: commit.hash });
         break;
-      case 'createBranch':
-        bridge.sendMessage('createBranchFromCommit', { hash: commit.hash });
+      case "createBranch":
+        bridge.sendMessage("createBranchFromCommit", { hash: commit.hash });
         break;
-      case 'createTag':
-        bridge.sendMessage('createTagFromCommit', { hash: commit.hash });
+      case "createTag":
+        bridge.sendMessage("createTagFromCommit", { hash: commit.hash });
         break;
-      case 'cherryPick':
-        bridge.sendMessage('cherryPickCommit', { hash: commit.hash });
+      case "cherryPick":
+        bridge.sendMessage("cherryPickCommit", { hash: commit.hash });
         break;
-      case 'copySha':
+      case "copySha":
         navigator.clipboard.writeText(commit.hash);
         break;
-      case 'copyTag':
-        navigator.clipboard.writeText(`${commit.message || 'No message'} (${(commit.hash || '').substring(0, 7)})`);
+      case "copyTag":
+        navigator.clipboard.writeText(
+          `${commit.message || "No message"} (${(commit.hash || "").substring(0, 7)})`,
+        );
         break;
-      case 'viewOnGitHub':
-        bridge.sendMessage('viewCommitOnGitHub', { hash: commit.hash });
+      case "viewOnGitHub":
+        bridge.sendMessage("viewCommitOnGitHub", { hash: commit.hash });
         break;
     }
     handleContextMenuClose();
   };
-
 
   return {
     handleFileToggle,

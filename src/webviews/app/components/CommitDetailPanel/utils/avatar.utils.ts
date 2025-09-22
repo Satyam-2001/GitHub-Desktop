@@ -8,10 +8,10 @@ export const generateAvatarUrl = (email: string, author: string): string => {
     "#6c5ce7",
     "#fd79a8",
   ];
-  const safeEmail = email || 'user@example.com';
+  const safeEmail = email || "user@example.com";
   const colorIndex = safeEmail.charCodeAt(0) % colors.length;
   const color = colors[colorIndex] || colors[0];
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(
-    author || 'Unknown'
+    author || "Unknown",
   )}&background=${color.slice(1)}&color=fff&size=32`;
 };

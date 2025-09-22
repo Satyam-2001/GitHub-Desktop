@@ -3,7 +3,7 @@ export class CommitId {
 
   constructor(value: string) {
     if (!value || value.length < 7) {
-      throw new Error('Invalid commit ID: must be at least 7 characters');
+      throw new Error("Invalid commit ID: must be at least 7 characters");
     }
     this._value = value;
   }

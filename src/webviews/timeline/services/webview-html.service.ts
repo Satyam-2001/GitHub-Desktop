@@ -1,17 +1,22 @@
-import * as path from 'path';
-import * as vscode from 'vscode';
-import { RepositoryManager } from '../../../core/repositories/repository-manager';
-import { getPrimaryRepository } from '../../../shared/utils/repo-selection';
+import * as path from "path";
+import * as vscode from "vscode";
+import { RepositoryManager } from "../../../core/repositories/repository-manager";
+import { getPrimaryRepository } from "../../../shared/utils/repo-selection";
 
 export class WebviewHtmlService {
   constructor(
     private readonly context: vscode.ExtensionContext,
-    private readonly repositories: RepositoryManager
+    private readonly repositories: RepositoryManager,
   ) {}
 
   generateHtml(webview: vscode.Webview): string {
     const reactAppUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.context.extensionUri, 'out', 'webview', 'main.js')
+      vscode.Uri.joinPath(
+        this.context.extensionUri,
+        "out",
+        "webview",
+        "main.js",
+      ),
     );
 
     const repository = getPrimaryRepository(this.repositories);
@@ -20,13 +25,15 @@ export class WebviewHtmlService {
       history: [],
       branches: [],
       currentBranch: null,
-      repository: repository ? {
-        name: path.basename(repository.localPath),
-        path: repository.localPath,
-        remote: repository.remoteUrl
-      } : null,
+      repository: repository
+        ? {
+            name: path.basename(repository.localPath),
+            path: repository.localPath,
+            remote: repository.remoteUrl,
+          }
+        : null,
       accounts: [],
-      activeAccount: null
+      activeAccount: null,
     };
 
     return `<!DOCTYPE html>

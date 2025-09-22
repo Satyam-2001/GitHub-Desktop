@@ -9,7 +9,7 @@ import { GitCommit, VSCodeBridge } from "../../../bridge";
 export const useTimelineState = (
   bridge: VSCodeBridge,
   history: GitCommit[],
-  commitsOffset: number
+  commitsOffset: number,
 ) => {
   const [activeTab, setActiveTab] = useState<TabType>("history");
   const [commitMessage, setCommitMessage] = useState("");
@@ -22,7 +22,7 @@ export const useTimelineState = (
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [allCommits, setAllCommits] = useState<GitCommit[]>([]);
   const [selectedCommitHash, setSelectedCommitHash] = useState<string | null>(
-    null
+    null,
   );
 
   // Update allCommits when history changes

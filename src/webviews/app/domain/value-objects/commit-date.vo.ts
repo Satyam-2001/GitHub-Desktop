@@ -1,5 +1,5 @@
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 
 export class CommitDate {
   private readonly _date: dayjs.Dayjs;
@@ -9,7 +9,7 @@ export class CommitDate {
     this._date = dayjs(date);
 
     if (!this._date.isValid()) {
-      throw new Error('Invalid date provided');
+      throw new Error("Invalid date provided");
     }
   }
 
@@ -19,17 +19,17 @@ export class CommitDate {
 
   get formatted(): string {
     const now = dayjs();
-    const diffInDays = now.diff(this._date, 'day');
+    const diffInDays = now.diff(this._date, "day");
 
     // For dates within the last 7 days, show relative format
     if (diffInDays <= 7) {
-      if (diffInDays === 0) return 'today';
-      if (diffInDays === 1) return 'yesterday';
+      if (diffInDays === 0) return "today";
+      if (diffInDays === 1) return "yesterday";
       return `${diffInDays} days ago`;
     }
 
     // For older dates, show formatted date with time
-    return this._date.format('D MMMM, YYYY [at] HH:mm');
+    return this._date.format("D MMMM, YYYY [at] HH:mm");
   }
 
   get relative(): string {

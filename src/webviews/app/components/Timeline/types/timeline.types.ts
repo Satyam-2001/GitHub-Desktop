@@ -1,4 +1,10 @@
-import { VSCodeBridge, GitChange, GitCommit, Repository, RemoteStatus } from '../../../bridge';
+import {
+  VSCodeBridge,
+  GitChange,
+  GitCommit,
+  Repository,
+  RemoteStatus,
+} from "../../../bridge";
 
 export interface TimelineProps {
   changes: GitChange[];
@@ -19,7 +25,7 @@ export interface ContextMenuState {
   commit: GitCommit | null;
 }
 
-export type TabType = 'changes' | 'history';
+export type TabType = "changes" | "history";
 
 export interface TimelineState {
   activeTab: TabType;

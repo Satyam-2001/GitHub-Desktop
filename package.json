@@ -1,245 +1,246 @@
 {
-    "name": "vscode-github-desktop",
-    "displayName": "GitHub Desktop",
-    "description": "A comprehensive VS Code extension that brings GitHub Desktop's complete workflow experience, featuring React-based UI, advanced commit management, branch operations, and multi-account support.",
-    "version": "1.1.1",
-    "publisher": "BetaVersion",
-    "icon": "media/icon.png",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/Satyam-2001/GitHub-Desktop"
-    },
-    "engines": {
-        "vscode": ">=1.84.0",
-        "node": ">=20.0.0"
-    },
-    "categories": [
-        "Other"
+  "name": "vscode-github-desktop",
+  "displayName": "GitHub Desktop",
+  "description": "A comprehensive VS Code extension that brings GitHub Desktop's complete workflow experience, featuring React-based UI, advanced commit management, branch operations, and multi-account support.",
+  "version": "1.1.1",
+  "publisher": "BetaVersion",
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Satyam-2001/GitHub-Desktop"
+  },
+  "engines": {
+    "vscode": ">=1.84.0",
+    "node": ">=20.0.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "git",
+    "github",
+    "github desktop",
+    "source control",
+    "commit",
+    "branch",
+    "repository",
+    "multi-account",
+    "react"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "githubDesktop.commit.reset",
+        "title": "Reset to Commit",
+        "category": "GitHub Desktop"
+      },
+      {
+        "command": "githubDesktop.commit.checkout",
+        "title": "Checkout Commit",
+        "category": "GitHub Desktop"
+      },
+      {
+        "command": "githubDesktop.commit.revert",
+        "title": "Revert Commit",
+        "category": "GitHub Desktop"
+      },
+      {
+        "command": "githubDesktop.commit.createBranch",
+        "title": "Create Branch from Commit",
+        "category": "GitHub Desktop"
+      },
+      {
+        "command": "githubDesktop.commit.createTag",
+        "title": "Create Tag",
+        "category": "GitHub Desktop"
+      },
+      {
+        "command": "githubDesktop.commit.cherryPick",
+        "title": "Cherry-pick Commit",
+        "category": "GitHub Desktop"
+      },
+      {
+        "command": "githubDesktop.commit.copySha",
+        "title": "Copy SHA",
+        "category": "GitHub Desktop"
+      },
+      {
+        "command": "githubDesktop.commit.viewOnGitHub",
+        "title": "View on GitHub",
+        "category": "GitHub Desktop"
+      },
+      {
+        "command": "githubDesktop.signIn",
+        "title": "GitHub Desktop: Sign In",
+        "category": "GitHub Desktop"
+      },
+      {
+        "command": "githubDesktop.signOut",
+        "title": "GitHub Desktop: Sign Out",
+        "category": "GitHub Desktop"
+      },
+      {
+        "command": "githubDesktop.signOutAccount",
+        "title": "Sign Out",
+        "category": "GitHub Desktop"
+      },
+      {
+        "command": "githubDesktop.switchAccount",
+        "title": "GitHub Desktop: Switch Active Account",
+        "category": "GitHub Desktop"
+      },
+      {
+        "command": "githubDesktop.switchToAccount",
+        "title": "GitHub Desktop: Switch to Account",
+        "category": "GitHub Desktop"
+      },
+      {
+        "command": "githubDesktop.cloneRepository",
+        "title": "GitHub Desktop: Clone Repository",
+        "category": "GitHub Desktop"
+      },
+      {
+        "command": "githubDesktop.openRepository",
+        "title": "GitHub Desktop: Open Repository",
+        "category": "GitHub Desktop"
+      },
+      {
+        "command": "githubDesktop.createIssue",
+        "title": "GitHub Desktop: Create Issue",
+        "category": "GitHub Desktop"
+      },
+      {
+        "command": "githubDesktop.refreshViews",
+        "title": "GitHub Desktop: Refresh Views",
+        "category": "GitHub Desktop"
+      },
+      {
+        "command": "githubDesktop.addAccount",
+        "title": "Add GitHub Account",
+        "category": "GitHub Desktop"
+      },
+      {
+        "command": "githubDesktop.manageAccounts",
+        "title": "Manage GitHub Accounts",
+        "category": "GitHub Desktop"
+      },
+      {
+        "command": "githubDesktop.removeAccount",
+        "title": "Remove Account",
+        "category": "GitHub Desktop"
+      },
+      {
+        "command": "githubDesktop.refreshAccounts",
+        "title": "Refresh Accounts",
+        "category": "GitHub Desktop"
+      }
     ],
-    "keywords": [
-        "git",
-        "github",
-        "github desktop",
-        "source control",
-        "commit",
-        "branch",
-        "repository",
-        "multi-account",
-        "react"
-    ],
-    "activationEvents": [
-        "onStartupFinished"
-    ],
-    "main": "./dist/extension.js",
-    "contributes": {
-        "commands": [
-            {
-                "command": "githubDesktop.commit.reset",
-                "title": "Reset to Commit",
-                "category": "GitHub Desktop"
-            },
-            {
-                "command": "githubDesktop.commit.checkout",
-                "title": "Checkout Commit",
-                "category": "GitHub Desktop"
-            },
-            {
-                "command": "githubDesktop.commit.revert",
-                "title": "Revert Commit",
-                "category": "GitHub Desktop"
-            },
-            {
-                "command": "githubDesktop.commit.createBranch",
-                "title": "Create Branch from Commit",
-                "category": "GitHub Desktop"
-            },
-            {
-                "command": "githubDesktop.commit.createTag",
-                "title": "Create Tag",
-                "category": "GitHub Desktop"
-            },
-            {
-                "command": "githubDesktop.commit.cherryPick",
-                "title": "Cherry-pick Commit",
-                "category": "GitHub Desktop"
-            },
-            {
-                "command": "githubDesktop.commit.copySha",
-                "title": "Copy SHA",
-                "category": "GitHub Desktop"
-            },
-            {
-                "command": "githubDesktop.commit.viewOnGitHub",
-                "title": "View on GitHub",
-                "category": "GitHub Desktop"
-            },
-            {
-                "command": "githubDesktop.signIn",
-                "title": "GitHub Desktop: Sign In",
-                "category": "GitHub Desktop"
-            },
-            {
-                "command": "githubDesktop.signOut",
-                "title": "GitHub Desktop: Sign Out",
-                "category": "GitHub Desktop"
-            },
-            {
-                "command": "githubDesktop.signOutAccount",
-                "title": "Sign Out",
-                "category": "GitHub Desktop"
-            },
-            {
-                "command": "githubDesktop.switchAccount",
-                "title": "GitHub Desktop: Switch Active Account",
-                "category": "GitHub Desktop"
-            },
-            {
-                "command": "githubDesktop.switchToAccount",
-                "title": "GitHub Desktop: Switch to Account",
-                "category": "GitHub Desktop"
-            },
-            {
-                "command": "githubDesktop.cloneRepository",
-                "title": "GitHub Desktop: Clone Repository",
-                "category": "GitHub Desktop"
-            },
-            {
-                "command": "githubDesktop.openRepository",
-                "title": "GitHub Desktop: Open Repository",
-                "category": "GitHub Desktop"
-            },
-            {
-                "command": "githubDesktop.createIssue",
-                "title": "GitHub Desktop: Create Issue",
-                "category": "GitHub Desktop"
-            },
-            {
-                "command": "githubDesktop.refreshViews",
-                "title": "GitHub Desktop: Refresh Views",
-                "category": "GitHub Desktop"
-            },
-            {
-                "command": "githubDesktop.addAccount",
-                "title": "Add GitHub Account",
-                "category": "GitHub Desktop"
-            },
-            {
-                "command": "githubDesktop.manageAccounts",
-                "title": "Manage GitHub Accounts",
-                "category": "GitHub Desktop"
-            },
-            {
-                "command": "githubDesktop.removeAccount",
-                "title": "Remove Account",
-                "category": "GitHub Desktop"
-            },
-            {
-                "command": "githubDesktop.refreshAccounts",
-                "title": "Refresh Accounts",
-                "category": "GitHub Desktop"
-            }
-        ],
-        "viewsContainers": {
-            "activitybar": [
-                {
-                    "id": "githubDesktop",
-                    "title": "GitHub Desktop",
-                    "icon": "media/icon.svg"
-                }
-            ]
-        },
-        "views": {
-            "githubDesktop": [
-                {
-                    "id": "githubDesktop.timeline",
-                    "name": "History",
-                    "type": "webview",
-                    "icon": "$(history)"
-                },
-                {
-                    "id": "githubDesktop.accounts",
-                    "name": "Accounts",
-                    "icon": "$(account)",
-                    "collapsed": true
-                },
-                {
-                    "id": "githubDesktop.repositories",
-                    "name": "Repositories",
-                    "icon": "$(repo)",
-                    "collapsed": true
-                }
-            ]
-        },
-        "menus": {
-            "view/item/context": [
-                {
-                    "command": "githubDesktop.signOutAccount",
-                    "when": "view == githubDesktop.accounts && viewItem == githubDesktop.account"
-                },
-                {
-                    "command": "githubDesktop.signOutAccount",
-                    "when": "view == githubDesktop.accounts && viewItem == githubDesktop.activeAccount"
-                },
-                {
-                    "command": "githubDesktop.removeAccount",
-                    "when": "view == githubDesktop.accounts && viewItem == githubDesktop.account"
-                },
-                {
-                    "command": "githubDesktop.removeAccount",
-                    "when": "view == githubDesktop.accounts && viewItem == githubDesktop.activeAccount"
-                }
-            ],
-            "view/title": [
-                {
-                    "command": "githubDesktop.addAccount",
-                    "when": "view == githubDesktop.accounts",
-                    "group": "navigation@1"
-                },
-                {
-                    "command": "githubDesktop.refreshAccounts",
-                    "when": "view == githubDesktop.accounts",
-                    "group": "navigation@2"
-                }
-            ]
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "githubDesktop",
+          "title": "GitHub Desktop",
+          "icon": "media/icon.svg"
         }
+      ]
     },
-    "scripts": {
-        "vscode:prepublish": "npm run compile && npm run build-webview",
-        "compile": "webpack --mode production",
-        "build-webview": "vite build --config vite.webview.config.ts",
-        "watch": "webpack --mode development --watch",
-        "watch-webview": "vite build --config vite.webview.config.ts --watch",
-        "dev-webview": "vite dev --config vite.webview.config.ts",
-        "package": "vsce package --no-dependencies --allow-missing-repository --allow-package-secrets github",
-        "test": "npm run compile && node ./out/test/runTest.js"
+    "views": {
+      "githubDesktop": [
+        {
+          "id": "githubDesktop.timeline",
+          "name": "History",
+          "type": "webview",
+          "icon": "$(history)"
+        },
+        {
+          "id": "githubDesktop.accounts",
+          "name": "Accounts",
+          "icon": "$(account)",
+          "collapsed": true
+        },
+        {
+          "id": "githubDesktop.repositories",
+          "name": "Repositories",
+          "icon": "$(repo)",
+          "collapsed": true
+        }
+      ]
     },
-    "devDependencies": {
-        "@types/node": "18.x",
-        "@types/react": "^19.1.13",
-        "@types/react-dom": "^19.1.9",
-        "@types/vscode": "^1.84.0",
-        "@vitejs/plugin-react": "^5.0.3",
-        "@vscode/vsce": "^3.6.0",
-        "rimraf": "^5.0.5",
-        "ts-loader": "^9.5.4",
-        "ts-node": "^10.9.2",
-        "typescript": "^5.3.3",
-        "vite": "^7.1.6",
-        "webpack": "^5.101.3",
-        "webpack-cli": "^6.0.1"
-    },
-    "dependencies": {
-        "@emotion/react": "^11.14.0",
-        "@emotion/styled": "^11.14.1",
-        "@mui/icons-material": "^7.3.2",
-        "@mui/material": "^7.3.2",
-        "@octokit/auth-oauth-device": "^4.0.3",
-        "@octokit/rest": "^20.0.2",
-        "@tanstack/react-query": "^5.89.0",
-        "axios": "^1.12.2",
-        "dayjs": "^1.11.18",
-        "react": "^19.1.0",
-        "react-dom": "^19.1.0",
-        "simple-git": "^3.21.0"
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "githubDesktop.signOutAccount",
+          "when": "view == githubDesktop.accounts && viewItem == githubDesktop.account"
+        },
+        {
+          "command": "githubDesktop.signOutAccount",
+          "when": "view == githubDesktop.accounts && viewItem == githubDesktop.activeAccount"
+        },
+        {
+          "command": "githubDesktop.removeAccount",
+          "when": "view == githubDesktop.accounts && viewItem == githubDesktop.account"
+        },
+        {
+          "command": "githubDesktop.removeAccount",
+          "when": "view == githubDesktop.accounts && viewItem == githubDesktop.activeAccount"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "githubDesktop.addAccount",
+          "when": "view == githubDesktop.accounts",
+          "group": "navigation@1"
+        },
+        {
+          "command": "githubDesktop.refreshAccounts",
+          "when": "view == githubDesktop.accounts",
+          "group": "navigation@2"
+        }
+      ]
     }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile && npm run build-webview",
+    "compile": "webpack --mode production",
+    "build-webview": "vite build --config vite.webview.config.ts",
+    "watch": "webpack --mode development --watch",
+    "watch-webview": "vite build --config vite.webview.config.ts --watch",
+    "dev-webview": "vite dev --config vite.webview.config.ts",
+    "package": "vsce package --no-dependencies --allow-missing-repository --allow-package-secrets github",
+    "test": "npm run compile && node ./out/test/runTest.js",
+    "format": "prettier --write \"src/**/*.ts\""
+  },
+  "devDependencies": {
+    "@types/node": "18.x",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "@types/vscode": "^1.84.0",
+    "@vitejs/plugin-react": "^5.0.3",
+    "@vscode/vsce": "^3.6.0",
+    "rimraf": "^5.0.5",
+    "ts-loader": "^9.5.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "vite": "^7.1.6",
+    "webpack": "^5.101.3",
+    "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.2",
+    "@mui/material": "^7.3.2",
+    "@octokit/auth-oauth-device": "^4.0.3",
+    "@octokit/rest": "^20.0.2",
+    "@tanstack/react-query": "^5.89.0",
+    "axios": "^1.12.2",
+    "dayjs": "^1.11.18",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "simple-git": "^3.21.0"
+  }
 }

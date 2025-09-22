@@ -1,6 +1,6 @@
-import { useContext } from 'react';
-import { ServiceContainer } from './service-container';
-import { ServiceContext } from './service-context';
+import { useContext } from "react";
+import { ServiceContainer } from "./service-container";
+import { ServiceContext } from "./service-context";
 
 export type ServiceKey = string;
 export type ServiceFactory<T = any> = () => T;
@@ -51,7 +51,7 @@ export class ServiceLocator {
 export const useService = <T>(key: ServiceKey): T => {
   const container = useContext(ServiceContext);
   if (!container) {
-    throw new Error('useService must be used within ServiceProvider');
+    throw new Error("useService must be used within ServiceProvider");
   }
   return container.get<T>(key);
 };

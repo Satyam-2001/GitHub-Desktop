@@ -1,21 +1,21 @@
-import * as vscode from 'vscode';
-import { CommitDetailMessage } from '../interfaces/commit-detail.interface';
-import { CommitDetailService } from './commit-detail.service';
+import * as vscode from "vscode";
+import { CommitDetailMessage } from "../interfaces/commit-detail.interface";
+import { CommitDetailService } from "./commit-detail.service";
 
 export class CommitDetailMessageHandlerService {
   constructor(
     private readonly commitDetailService: CommitDetailService,
     private readonly panel: vscode.WebviewPanel,
-    private readonly commitHash: string
+    private readonly commitHash: string,
   ) {}
 
   async handleMessage(message: CommitDetailMessage): Promise<void> {
     try {
       switch (message.command) {
-        case 'ready':
+        case "ready":
           await this.handleReady();
           break;
-        case 'getFileDiff':
+        case "getFileDiff":
           if (message.hash && message.filePath) {
             await this.handleGetFileDiff(message.hash, message.filePath);
           }
@@ -32,11 +32,11 @@ export class CommitDetailMessageHandlerService {
     try {
       const commitDetail = await this.commitDetailService.getCommitDetail(
         this.commitHash,
-        this.panel.webview
+        this.panel.webview,
       );
 
       this.panel.webview.postMessage({
-        command: 'commitDetails',
+        command: "commitDetails",
         commitDetail,
       });
     } catch (error) {
@@ -44,7 +44,10 @@ export class CommitDetailMessageHandlerService {
     }
   }
 
-  private async handleGetFileDiff(hash: string, filePath: string): Promise<void> {
+  private async handleGetFileDiff(
+    hash: string,
+    filePath: string,
+  ): Promise<void> {
     try {
       await this.commitDetailService.createFileDiff(hash, filePath);
     } catch (error) {

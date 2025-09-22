@@ -1,4 +1,4 @@
-import { ServiceKey, ServiceFactory } from './service-locator';
+import { ServiceKey, ServiceFactory } from "./service-locator";
 
 export class ServiceContainer {
   private services = new Map<ServiceKey, any>();

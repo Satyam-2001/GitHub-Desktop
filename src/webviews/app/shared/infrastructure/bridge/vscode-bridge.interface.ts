@@ -16,7 +16,7 @@ export class VSCodeBridgeImpl implements VSCodeBridge {
   private vscodeApi: any;
 
   constructor() {
-    if (typeof window !== 'undefined' && (window as any).vscodeApi) {
+    if (typeof window !== "undefined" && (window as any).vscodeApi) {
       this.vscodeApi = (window as any).vscodeApi;
       this.setupMessageListener();
     }
@@ -45,9 +45,9 @@ export class VSCodeBridgeImpl implements VSCodeBridge {
   }
 
   private setupMessageListener(): void {
-    window.addEventListener('message', (event) => {
+    window.addEventListener("message", (event) => {
       const message = event.data;
-      this.messageHandlers.forEach(handler => handler(message));
+      this.messageHandlers.forEach((handler) => handler(message));
     });
   }
 }

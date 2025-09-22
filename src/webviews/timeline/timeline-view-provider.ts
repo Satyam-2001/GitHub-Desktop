@@ -1,12 +1,15 @@
-import * as vscode from 'vscode';
-import { RepositoryManager } from '../../core/repositories/repository-manager';
-import { AccountManager } from '../../core/accounts/account-manager';
-import { CommitDetailViewProvider } from '../commitDetail/commit-detail-view-provider';
-import { ITimelineViewProvider, WebviewMessage } from './interfaces/timeline-view-provider.interface';
-import { GitOperationsService } from './services/git-operations.service';
-import { WebviewHtmlService } from './services/webview-html.service';
-import { MessageHandlerService } from './services/message-handler.service';
-import { FileIconService } from './services/file-icon.service';
+import * as vscode from "vscode";
+import { RepositoryManager } from "../../core/repositories/repository-manager";
+import { AccountManager } from "../../core/accounts/account-manager";
+import { CommitDetailViewProvider } from "../commitDetail/commit-detail-view-provider";
+import {
+  ITimelineViewProvider,
+  WebviewMessage,
+} from "./interfaces/timeline-view-provider.interface";
+import { GitOperationsService } from "./services/git-operations.service";
+import { WebviewHtmlService } from "./services/webview-html.service";
+import { MessageHandlerService } from "./services/message-handler.service";
+import { FileIconService } from "./services/file-icon.service";
 
 export class TimelineViewProvider implements ITimelineViewProvider {
   private view: vscode.WebviewView | undefined;
@@ -19,7 +22,7 @@ export class TimelineViewProvider implements ITimelineViewProvider {
     private readonly context: vscode.ExtensionContext,
     private readonly repositories: RepositoryManager,
     private readonly accounts: AccountManager,
-    private readonly commitDetailProvider: CommitDetailViewProvider
+    private readonly commitDetailProvider: CommitDetailViewProvider,
   ) {
     this.gitService = new GitOperationsService(repositories);
     this.htmlService = new WebviewHtmlService(context, repositories);
@@ -36,7 +39,7 @@ export class TimelineViewProvider implements ITimelineViewProvider {
 
   async refresh(): Promise<void> {
     if (this.view && this.messageHandler) {
-      await this.messageHandler.handleMessage({ command: 'refresh' });
+      await this.messageHandler.handleMessage({ command: "refresh" });
     }
   }
 
@@ -44,12 +47,19 @@ export class TimelineViewProvider implements ITimelineViewProvider {
     webviewView.webview.options = {
       enableScripts: true,
       localResourceRoots: [
-        vscode.Uri.joinPath(this.context.extensionUri, 'out', 'webview'),
-        vscode.Uri.joinPath(this.context.extensionUri, 'out', 'webview', 'assets'),
-        vscode.Uri.joinPath(this.context.extensionUri, 'out')
-      ]
+        vscode.Uri.joinPath(this.context.extensionUri, "out", "webview"),
+        vscode.Uri.joinPath(
+          this.context.extensionUri,
+          "out",
+          "webview",
+          "assets",
+        ),
+        vscode.Uri.joinPath(this.context.extensionUri, "out"),
+      ],
     };
-    webviewView.webview.html = this.htmlService.generateHtml(webviewView.webview);
+    webviewView.webview.html = this.htmlService.generateHtml(
+      webviewView.webview,
+    );
   }
 
   private setupMessageHandler(): void {
@@ -61,7 +71,7 @@ export class TimelineViewProvider implements ITimelineViewProvider {
       this.accounts,
       this.commitDetailProvider,
       this.gitService,
-      this.view
+      this.view,
     );
   }
 
@@ -83,7 +93,7 @@ export class TimelineViewProvider implements ITimelineViewProvider {
 
   private async refreshData(): Promise<void> {
     if (this.messageHandler) {
-      await this.messageHandler.handleMessage({ command: 'refresh' });
+      await this.messageHandler.handleMessage({ command: "refresh" });
     }
   }
 }

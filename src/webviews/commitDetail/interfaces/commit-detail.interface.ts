@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
 export interface CommitDetailFile {
   path: string;
@@ -31,6 +31,9 @@ export interface ICommitDetailViewProvider {
 }
 
 export interface ICommitDetailService {
-  getCommitDetail(commitHash: string, webview?: vscode.Webview): Promise<CommitDetail>;
+  getCommitDetail(
+    commitHash: string,
+    webview?: vscode.Webview,
+  ): Promise<CommitDetail>;
   createFileDiff(hash: string, filePath: string): Promise<void>;
 }
