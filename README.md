@@ -25,7 +25,7 @@
 
 ---
 
-## 📸 Screenshots
+## 📸 Examples
 
 ### Main Interface
 ![Main Interface](https://storage.googleapis.com/nprep-f64b1.firebasestorage.app/admin/1758528839314_1.png)
