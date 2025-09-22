@@ -10,7 +10,8 @@
         "url": "https://github.com/Satyam-2001/GitHub-Desktop"
     },
     "engines": {
-        "vscode": ">=1.84.0"
+        "vscode": ">=1.84.0",
+        "node": ">=20.0.0"
     },
     "categories": [
         "Other"
