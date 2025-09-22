@@ -20,10 +20,17 @@ class AccountItem extends vscode.TreeItem {
   }
 
   private getDescription(): string {
-    if (this.active) {
-      return '● Active';
+    let description = '';
+    if (this.account.baseUrl && !this.account.baseUrl.includes('github.com')) {
+      description = 'Enterprise';
+    } else {
+      description = this.account.name || '';
     }
-    return this.account.name || '';
+
+    if (this.active) {
+      return description ? `● Active • ${description}` : '● Active';
+    }
+    return description;
   }
 
   private getIcon(): vscode.ThemeIcon {
@@ -34,7 +41,13 @@ class AccountItem extends vscode.TreeItem {
   }
 
   private getTooltip(): string {
-    const baseInfo = this.account.name ? `${this.account.login}\n${this.account.name}` : this.account.login;
+    let baseInfo = this.account.login;
+    if (this.account.name) {
+      baseInfo += `\n${this.account.name}`;
+    }
+    if (this.account.baseUrl && !this.account.baseUrl.includes('github.com')) {
+      baseInfo += `\nGitHub Enterprise: ${this.account.baseUrl}`;
+    }
     return this.active ? `${baseInfo}\n\n● Currently active account` : `${baseInfo}\n\nClick to switch to this account`;
   }
 }
@@ -44,16 +57,30 @@ class AddAccountItem extends vscode.TreeItem {
     super('Add Account', vscode.TreeItemCollapsibleState.None);
     this.description = 'Sign in to another GitHub account';
     this.contextValue = 'githubDesktop.addAccount';
-    this.iconPath = new vscode.ThemeIcon('add');
+    this.iconPath = new vscode.ThemeIcon('add', new vscode.ThemeColor('charts.blue'));
     this.tooltip = 'Sign in to another GitHub account';
     this.command = {
-      command: 'githubDesktop.signIn',
+      command: 'githubDesktop.addAccount',
       title: 'Add Account'
     };
   }
 }
 
-type TreeItem = AccountItem | AddAccountItem | vscode.TreeItem;
+class ManageAccountsItem extends vscode.TreeItem {
+  constructor() {
+    super('Manage Accounts', vscode.TreeItemCollapsibleState.None);
+    this.description = 'Switch, refresh, or remove accounts';
+    this.contextValue = 'githubDesktop.manageAccounts';
+    this.iconPath = new vscode.ThemeIcon('settings-gear');
+    this.tooltip = 'Manage all GitHub accounts';
+    this.command = {
+      command: 'githubDesktop.manageAccounts',
+      title: 'Manage Accounts'
+    };
+  }
+}
+
+type TreeItem = AccountItem | AddAccountItem | ManageAccountsItem | vscode.TreeItem;
 
 export class AccountsProvider implements vscode.TreeDataProvider<TreeItem> {
   private readonly _onDidChangeTreeData = new vscode.EventEmitter<TreeItem | undefined | null | void>();
@@ -98,7 +125,10 @@ export class AccountsProvider implements vscode.TreeDataProvider<TreeItem> {
       items.push(new AccountItem(account, account.id === activeAccount?.id));
     }
 
-    // Add "Add Account" item at the end
+    // Add management items at the end
+    if (accounts.length > 1) {
+      items.push(new ManageAccountsItem());
+    }
     items.push(new AddAccountItem());
 
     return items;
@@ -122,8 +152,18 @@ export class AccountsProvider implements vscode.TreeDataProvider<TreeItem> {
     }
 
     try {
-      await this.accountManager.setActiveAccount(accountId);
-      vscode.window.showInformationMessage(`Switched to ${account.login}.`);
+      // Show progress while switching
+      await vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: `Switching to ${account.login}...`,
+        cancellable: false
+      }, async () => {
+        await this.accountManager.setActiveAccount(accountId);
+        // Refresh the tree to update UI
+        this.refresh();
+      });
+
+      vscode.window.showInformationMessage(`✓ Switched to ${account.login}`);
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to switch account: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }

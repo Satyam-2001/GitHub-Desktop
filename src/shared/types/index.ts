@@ -4,6 +4,7 @@ export interface StoredAccount {
   name?: string;
   avatarUrl?: string;
   tokenKey: string;
+  baseUrl?: string; // For GitHub Enterprise Server
 }
 
 export interface TrackedRepository {

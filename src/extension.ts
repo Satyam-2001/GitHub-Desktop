@@ -89,6 +89,70 @@ export async function activate(
     vscode.commands.registerCommand("githubDesktop.refreshViews", () =>
       refreshAllViews()
     ),
+    vscode.commands.registerCommand("githubDesktop.addAccount", async () => {
+      const account = await accountManager.signIn();
+      if (account) {
+        await linkUnassignedRepositories(repositoryManager, account.id);
+        refreshAllViews();
+      }
+    }),
+    vscode.commands.registerCommand("githubDesktop.manageAccounts", async () => {
+      const accounts = accountManager.getAccounts();
+      if (accounts.length === 0) {
+        vscode.window.showInformationMessage('No GitHub accounts available. Sign in first.');
+        return;
+      }
+
+      const activeAccount = accountManager.getActiveAccount();
+      const items = accounts.map(account => ({
+        label: account.login,
+        description: account.name || '',
+        detail: account.id === activeAccount?.id ? '● Active Account' : '',
+        account
+      }));
+
+      const selected = await vscode.window.showQuickPick(items, {
+        placeHolder: 'Select an account to manage',
+        matchOnDescription: true
+      });
+
+      if (selected) {
+        const action = await vscode.window.showQuickPick([
+          { label: '$(arrow-right) Set as Active', value: 'activate' },
+          { label: '$(sign-out) Sign Out', value: 'signout' },
+          { label: '$(sync) Refresh Token', value: 'refresh' }
+        ], {
+          placeHolder: `Manage ${selected.account.login}`
+        });
+
+        if (action?.value === 'activate') {
+          await accountManager.setActiveAccount(selected.account.id);
+          refreshAllViews();
+        } else if (action?.value === 'signout') {
+          await accountManager.signOut(selected.account.id);
+          refreshAllViews();
+        } else if (action?.value === 'refresh') {
+          // Refresh token by re-authenticating
+          const newAccount = await accountManager.signIn();
+          if (newAccount) {
+            refreshAllViews();
+          }
+        }
+      }
+    }),
+    vscode.commands.registerCommand("githubDesktop.removeAccount", async (item: any) => {
+      const accountId = item?.account?.id;
+      if (accountId) {
+        await accountManager.signOut(accountId);
+        refreshAllViews();
+      } else {
+        await accountManager.signOut();
+        refreshAllViews();
+      }
+    }),
+    vscode.commands.registerCommand("githubDesktop.refreshAccounts", () => {
+      accountsProvider.refresh();
+    }),
     vscode.workspace.onDidSaveTextDocument(
       () => void timelineProvider.refresh()
     ),

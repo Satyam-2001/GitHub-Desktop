@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { Octokit } from '@octokit/rest';
+import { createOAuthDeviceAuth } from '@octokit/auth-oauth-device';
 import { execFile } from 'child_process';
 import { randomUUID } from 'crypto';
 import { promisify } from 'util';
@@ -70,6 +71,16 @@ export class AccountManager {
     // Provide sign-in options
     const signInMethod = await vscode.window.showQuickPick(
       [
+        {
+          label: '$(browser) Sign in with Browser',
+          description: 'Authenticate using your default browser (Recommended)',
+          value: 'browser'
+        },
+        {
+          label: '$(device-mobile) Sign in with Device Code',
+          description: 'Use device code flow for authentication',
+          value: 'device'
+        },
         ...(cliInfo ? [{
           label: '$(github) Use GitHub CLI',
           description: cliInfo.multipleAccounts
@@ -81,6 +92,11 @@ export class AccountManager {
           label: '$(key) Enter Personal Access Token',
           description: 'Manually enter a GitHub PAT',
           value: 'token'
+        },
+        {
+          label: '$(server-environment) GitHub Enterprise Server',
+          description: 'Connect to GitHub Enterprise Server',
+          value: 'enterprise'
         },
         ...(cliInfo?.multipleAccounts ? [{
           label: '$(terminal) Switch GitHub CLI Account',
@@ -98,87 +114,21 @@ export class AccountManager {
       return undefined;
     }
 
-    let token: string | undefined;
-    let source: string | undefined;
-
-    if (signInMethod.value === 'switch-cli') {
-      // Guide user to switch GitHub CLI account
-      const terminal = vscode.window.createTerminal('GitHub CLI');
-      terminal.show();
-      terminal.sendText('gh auth status');
-      terminal.sendText('# To switch accounts, use: gh auth switch');
-
-      vscode.window.showInformationMessage(
-        'Switch your GitHub CLI account in the terminal, then try adding the account again.',
-        'OK'
-      );
-      return undefined;
-    } else if (signInMethod.value === 'cli') {
-      // Use current GitHub CLI token
-      const cliToken = await this.getGitHubCliToken();
-      if (cliToken) {
-        token = cliToken.token;
-        source = cliToken.source;
-      }
-    } else {
-      // Manual token entry
-      token = await vscode.window.showInputBox({
-        prompt: 'Enter a GitHub Personal Access Token with repo and workflow scopes',
-        placeHolder: 'ghp_xxx...',
-        password: true,
-        ignoreFocusOut: true
-      });
-      if (!token) {
-        vscode.window.showInformationMessage('GitHub Desktop sign-in cancelled.');
+    switch (signInMethod.value) {
+      case 'browser':
+        return this.signInWithBrowser();
+      case 'device':
+        return this.signInWithDeviceCode();
+      case 'cli':
+        return this.authenticateWithCLI();
+      case 'token':
+        return this.signInWithToken();
+      case 'enterprise':
+        return this.signInWithEnterprise();
+      case 'switch-cli':
+        return this.switchCLIAccountAndSignIn();
+      default:
         return undefined;
-      }
-    }
-
-    if (!token) {
-      vscode.window.showErrorMessage('Failed to obtain authentication token.');
-      return undefined;
-    }
-
-    const octokit = new Octokit({ auth: token });
-    try {
-      const { data } = await octokit.rest.users.getAuthenticated();
-      const existing = this.accounts.find((acc) => acc.login === data.login);
-      const tokenKey = existing?.tokenKey ?? `githubDesktop.token.${randomUUID()}`;
-      const account: StoredAccount = existing ?? {
-        id: randomUUID(),
-        login: data.login,
-        name: data.name ?? undefined,
-        avatarUrl: data.avatar_url ?? undefined,
-        tokenKey
-      };
-
-      if (existing) {
-        existing.name = data.name ?? undefined;
-        existing.avatarUrl = data.avatar_url ?? undefined;
-      } else {
-        this.accounts.push(account);
-      }
-
-      await this.secretStorage.store(tokenKey, token);
-
-      this.activeAccountId = account.id;
-      await this.persist();
-      await this.globalState.update(ACTIVE_ACCOUNT_KEY, this.activeAccountId);
-      this._onDidChangeAccounts.fire();
-
-      if (source) {
-        vscode.window.showInformationMessage(`Signed in as ${account.login} using ${source}.`);
-      } else {
-        vscode.window.showInformationMessage(`Signed in as ${account.login}.`);
-      }
-      return account;
-    } catch (error) {
-      if (error instanceof Error) {
-        vscode.window.showErrorMessage(`Failed to authenticate with GitHub: ${error.message}`);
-      } else {
-        vscode.window.showErrorMessage('Failed to authenticate with GitHub.');
-      }
-      return undefined;
     }
   }
 
@@ -212,16 +162,50 @@ export class AccountManager {
 
   async switchAccount(): Promise<StoredAccount | undefined> {
     if (this.accounts.length === 0) {
-      vscode.window.showInformationMessage('No GitHub accounts available. Use Sign In first.');
+      const signIn = await vscode.window.showInformationMessage(
+        'No GitHub accounts available.',
+        'Sign In'
+      );
+      if (signIn) {
+        return this.signIn();
+      }
       return undefined;
     }
 
-    const chosen = await this.pickAccount('Select the active GitHub account');
+    if (this.accounts.length === 1) {
+      vscode.window.showInformationMessage(`Only one account available: ${this.accounts[0].login}`);
+      return this.accounts[0];
+    }
+
+    const activeAccount = this.getActiveAccount();
+    const items = this.accounts.map(account => ({
+      label: account.login,
+      description: account.name || '',
+      detail: account.id === activeAccount?.id ? '● Currently active' : '',
+      account
+    }));
+
+    const chosen = await vscode.window.showQuickPick(items, {
+      placeHolder: 'Select the active GitHub account',
+      matchOnDescription: true,
+      ignoreFocusOut: true
+    });
+
     if (!chosen) {
       return undefined;
     }
 
-    return this.setActiveAccount(chosen.id);
+    if (chosen.account.id === activeAccount?.id) {
+      vscode.window.showInformationMessage(`${chosen.account.login} is already active.`);
+      return chosen.account;
+    }
+
+    try {
+      return await this.setActiveAccount(chosen.account.id);
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to switch account: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return undefined;
+    }
   }
 
   async setActiveAccount(accountId: string): Promise<StoredAccount | undefined> {
@@ -234,12 +218,32 @@ export class AccountManager {
       return account;
     }
 
-    this.activeAccountId = accountId;
-    await this.globalState.update(ACTIVE_ACCOUNT_KEY, this.activeAccountId);
-    this._onDidChangeAccounts.fire();
+    // Verify the account token is still valid
+    const token = await this.getToken(accountId);
+    if (!token) {
+      throw new Error('Account token not found. Please sign in again.');
+    }
 
-    vscode.window.showInformationMessage(`Active account switched to ${account.login}.`);
-    return account;
+    try {
+      // Test the token by making a simple API call
+      const octokit = new Octokit({ auth: token });
+      await octokit.rest.users.getAuthenticated();
+    } catch (error) {
+      throw new Error('Account token is invalid. Please sign in again.');
+    }
+
+    const previousActiveId = this.activeAccountId;
+    this.activeAccountId = accountId;
+
+    try {
+      await this.globalState.update(ACTIVE_ACCOUNT_KEY, this.activeAccountId);
+      this._onDidChangeAccounts.fire();
+      return account;
+    } catch (error) {
+      // Revert on error
+      this.activeAccountId = previousActiveId;
+      throw error;
+    }
   }
 
   async getOctokit(accountId?: string): Promise<Octokit | undefined> {
@@ -345,6 +349,188 @@ export class AccountManager {
         return { token, source: 'GitHub CLI session' };
       }
     } catch {
+      return undefined;
+    }
+  }
+
+  private async authenticateWithCLI(): Promise<StoredAccount | undefined> {
+    const cliToken = await this.getGitHubCliToken();
+    if (!cliToken) {
+      vscode.window.showErrorMessage('Failed to get token from GitHub CLI.');
+      return undefined;
+    }
+    return this.completeAuthentication(cliToken.token, cliToken.source);
+  }
+
+  private async signInWithBrowser(): Promise<StoredAccount | undefined> {
+    try {
+      // Use GitHub's OAuth Device Flow
+      const auth = createOAuthDeviceAuth({
+        clientType: 'oauth-app',
+        clientId: 'Iv1.b507a08c87ecfe98', // GitHub's official OAuth App for VS Code extensions
+        scopes: ['repo', 'user:email', 'read:org'],
+        onVerification: (verification: any) => {
+          // Open browser and show the user code
+          vscode.env.openExternal(vscode.Uri.parse(verification.verification_uri));
+          vscode.window.showInformationMessage(
+            `Opening browser to authenticate. Use code: ${verification.user_code}`,
+            'Copy Code'
+          ).then(selection => {
+            if (selection === 'Copy Code') {
+              vscode.env.clipboard.writeText(verification.user_code);
+            }
+          });
+        }
+      });
+
+      const { token } = await auth({ type: 'oauth' });
+      return this.completeAuthentication(token, 'browser authentication');
+    } catch (error) {
+      vscode.window.showErrorMessage(`Browser authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return undefined;
+    }
+  }
+
+  private async signInWithDeviceCode(): Promise<StoredAccount | undefined> {
+    try {
+      const auth = createOAuthDeviceAuth({
+        clientType: 'oauth-app',
+        clientId: 'Iv1.b507a08c87ecfe98',
+        scopes: ['repo', 'user:email', 'read:org'],
+        onVerification: (verification: any) => {
+          const message = `Go to: ${verification.verification_uri}\nEnter code: ${verification.user_code}`;
+          vscode.window.showInformationMessage(message, 'Copy Code', 'Open URL').then(selection => {
+            if (selection === 'Copy Code') {
+              vscode.env.clipboard.writeText(verification.user_code);
+            } else if (selection === 'Open URL') {
+              vscode.env.openExternal(vscode.Uri.parse(verification.verification_uri));
+            }
+          });
+        }
+      });
+
+      const { token } = await auth({ type: 'oauth' });
+      return this.completeAuthentication(token, 'device code authentication');
+    } catch (error) {
+      vscode.window.showErrorMessage(`Device code authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return undefined;
+    }
+  }
+
+  private async signInWithToken(): Promise<StoredAccount | undefined> {
+    const token = await vscode.window.showInputBox({
+      prompt: 'Enter your GitHub Personal Access Token',
+      placeHolder: 'ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+      password: true,
+      ignoreFocusOut: true,
+      validateInput: (value) => {
+        if (!value) return 'Token is required';
+        if (!value.startsWith('ghp_') && !value.startsWith('github_pat_')) {
+          return 'Invalid token format';
+        }
+        return null;
+      }
+    });
+
+    if (!token) {
+      return undefined;
+    }
+
+    return this.completeAuthentication(token, 'Personal Access Token');
+  }
+
+  private async signInWithEnterprise(): Promise<StoredAccount | undefined> {
+    const serverUrl = await vscode.window.showInputBox({
+      prompt: 'Enter your GitHub Enterprise Server URL',
+      placeHolder: 'https://github.your-company.com',
+      ignoreFocusOut: true,
+      validateInput: (value) => {
+        if (!value) return 'Server URL is required';
+        try {
+          new URL(value);
+          return null;
+        } catch {
+          return 'Please enter a valid URL';
+        }
+      }
+    });
+
+    if (!serverUrl) {
+      return undefined;
+    }
+
+    const token = await vscode.window.showInputBox({
+      prompt: `Enter your Personal Access Token for ${serverUrl}`,
+      placeHolder: 'ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+      password: true,
+      ignoreFocusOut: true,
+      validateInput: (value) => {
+        if (!value) return 'Token is required';
+        return null;
+      }
+    });
+
+    if (!token) {
+      return undefined;
+    }
+
+    return this.completeAuthentication(token, `GitHub Enterprise (${serverUrl})`, serverUrl);
+  }
+
+  private async switchCLIAccountAndSignIn(): Promise<StoredAccount | undefined> {
+    vscode.window.showInformationMessage(
+      'Please use "gh auth switch" in your terminal to switch GitHub CLI accounts, then try signing in again.'
+    );
+    return undefined;
+  }
+
+  private async completeAuthentication(token: string, source?: string, baseUrl?: string): Promise<StoredAccount | undefined> {
+    const octokitOptions: any = { auth: token };
+    if (baseUrl) {
+      octokitOptions.baseUrl = baseUrl.replace(/\/$/, '') + '/api/v3';
+    }
+
+    const octokit = new Octokit(octokitOptions);
+    try {
+      const { data } = await octokit.rest.users.getAuthenticated();
+      const existing = this.accounts.find((acc) => acc.login === data.login);
+      const tokenKey = existing?.tokenKey ?? `githubDesktop.token.${randomUUID()}`;
+      const account: StoredAccount = existing ?? {
+        id: randomUUID(),
+        login: data.login,
+        name: data.name ?? undefined,
+        avatarUrl: data.avatar_url ?? undefined,
+        tokenKey,
+        baseUrl
+      };
+
+      if (existing) {
+        existing.name = data.name ?? undefined;
+        existing.avatarUrl = data.avatar_url ?? undefined;
+        if (baseUrl) existing.baseUrl = baseUrl;
+      } else {
+        this.accounts.push(account);
+      }
+
+      await this.secretStorage.store(tokenKey, token);
+
+      this.activeAccountId = account.id;
+      await this.persist();
+      await this.globalState.update(ACTIVE_ACCOUNT_KEY, this.activeAccountId);
+      this._onDidChangeAccounts.fire();
+
+      if (source) {
+        vscode.window.showInformationMessage(`✓ Signed in as ${account.login} using ${source}.`);
+      } else {
+        vscode.window.showInformationMessage(`✓ Signed in as ${account.login}.`);
+      }
+      return account;
+    } catch (error) {
+      if (error instanceof Error) {
+        vscode.window.showErrorMessage(`Failed to authenticate with GitHub: ${error.message}`);
+      } else {
+        vscode.window.showErrorMessage('Failed to authenticate with GitHub.');
+      }
       return undefined;
     }
   }

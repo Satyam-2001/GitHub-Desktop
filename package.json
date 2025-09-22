@@ -116,6 +116,26 @@
                 "command": "githubDesktop.refreshViews",
                 "title": "GitHub Desktop: Refresh Views",
                 "category": "GitHub Desktop"
+            },
+            {
+                "command": "githubDesktop.addAccount",
+                "title": "Add GitHub Account",
+                "category": "GitHub Desktop"
+            },
+            {
+                "command": "githubDesktop.manageAccounts",
+                "title": "Manage GitHub Accounts",
+                "category": "GitHub Desktop"
+            },
+            {
+                "command": "githubDesktop.removeAccount",
+                "title": "Remove Account",
+                "category": "GitHub Desktop"
+            },
+            {
+                "command": "githubDesktop.refreshAccounts",
+                "title": "Refresh Accounts",
+                "category": "GitHub Desktop"
             }
         ],
         "viewsContainers": {
@@ -158,6 +178,26 @@
                 {
                     "command": "githubDesktop.signOutAccount",
                     "when": "view == githubDesktop.accounts && viewItem == githubDesktop.activeAccount"
+                },
+                {
+                    "command": "githubDesktop.removeAccount",
+                    "when": "view == githubDesktop.accounts && viewItem == githubDesktop.account"
+                },
+                {
+                    "command": "githubDesktop.removeAccount",
+                    "when": "view == githubDesktop.accounts && viewItem == githubDesktop.activeAccount"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "githubDesktop.addAccount",
+                    "when": "view == githubDesktop.accounts",
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "githubDesktop.refreshAccounts",
+                    "when": "view == githubDesktop.accounts",
+                    "group": "navigation@2"
                 }
             ]
         }
