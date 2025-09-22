@@ -519,9 +519,14 @@ export class MessageHandlerService {
 
   private async handleCreateTagFromCommit(hash: string): Promise<void> {
     const tagName = await vscode.window.showInputBox({
-      prompt: 'Enter tag name',
+      prompt: 'Enter tag name (e.g., v1.0.0)',
       placeHolder: 'v1.0.0',
-      ignoreFocusOut: true
+      ignoreFocusOut: true,
+      validateInput: (value) => {
+        if (!value) return 'Tag name is required';
+        if (!/^[a-zA-Z0-9._-]+$/.test(value)) return 'Tag name contains invalid characters';
+        return null;
+      }
     });
 
     if (!tagName) return;
@@ -530,9 +535,19 @@ export class MessageHandlerService {
     if (!repository) return;
 
     try {
-      const git = simpleGit(repository.localPath);
-      await git.raw(['tag', tagName, hash]);
-      vscode.window.showInformationMessage(`Created tag '${tagName}' on commit ${hash.substring(0, 7)}`);
+      const git = await this.configureGitWithAuth(repository.localPath);
+      if (!git) {
+        vscode.window.showErrorMessage('No authenticated GitHub account found. Please sign in first.');
+        return;
+      }
+
+      // Create annotated tag with default message
+      await git.raw(['tag', '-a', tagName, hash, '-m', `Release ${tagName}`]);
+
+      // Push the tag to remote
+      await git.pushTags('origin');
+
+      vscode.window.showInformationMessage(`Created and pushed tag '${tagName}' to GitHub`);
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to create tag: ${error}`);
     }
