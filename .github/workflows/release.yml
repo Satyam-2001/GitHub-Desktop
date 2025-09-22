@@ -1,0 +1,122 @@
+name: Release Extension
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers on version tags like v1.0.0, v1.1.0, etc.
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write  # Needed to create releases
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build extension
+        run: |
+          npm run compile
+          npm run build-webview
+
+      - name: Package extension
+        run: npm run package
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Get changelog entry
+        id: changelog
+        run: |
+          # Extract changelog for this version (customize based on your CHANGELOG format)
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          echo "## What's New in v${{ steps.get_version.outputs.VERSION }}" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "### Features" >> $GITHUB_OUTPUT
+          echo "- Multi-account support with secure token storage" >> $GITHUB_OUTPUT
+          echo "- Visual Git operations with GitHub Desktop-style UI" >> $GITHUB_OUTPUT
+          echo "- Advanced branch management and commit history" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "### Improvements" >> $GITHUB_OUTPUT
+          echo "- Better authentication handling" >> $GITHUB_OUTPUT
+          echo "- Enhanced diff viewer integration" >> $GITHUB_OUTPUT
+          echo "- Performance optimizations" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "### Bug Fixes" >> $GITHUB_OUTPUT
+          echo "- Fixed authentication issues with push/pull operations" >> $GITHUB_OUTPUT
+          echo "- Resolved commit panel display issues" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: GitHub Desktop for VS Code v${{ steps.get_version.outputs.VERSION }}
+          body: |
+            # GitHub Desktop for VS Code v${{ steps.get_version.outputs.VERSION }}
+
+            ${{ steps.changelog.outputs.CHANGELOG }}
+
+            ## Installation
+
+            ### From VSIX file:
+            1. Download the `vscode-github-desktop-${{ steps.get_version.outputs.VERSION }}.vsix` file from the assets below
+            2. In VS Code, go to Extensions view (Ctrl+Shift+X)
+            3. Click on the "..." menu and select "Install from VSIX..."
+            4. Select the downloaded file
+
+            ### From Command Line:
+            ```bash
+            code --install-extension vscode-github-desktop-${{ steps.get_version.outputs.VERSION }}.vsix
+            ```
+
+            ## Requirements
+            - VS Code 1.84.0 or higher
+            - Git installed and accessible in PATH
+            - GitHub account for full functionality
+
+            ## Support
+            - 🐛 [Report Issues](https://github.com/Satyam-2001/GitHub-Desktop/issues)
+            - 💡 [Feature Requests](https://github.com/Satyam-2001/GitHub-Desktop/discussions)
+            - ⭐ [Star on GitHub](https://github.com/Satyam-2001/GitHub-Desktop)
+
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./vscode-github-desktop-${{ steps.get_version.outputs.VERSION }}.vsix
+          asset_name: vscode-github-desktop-${{ steps.get_version.outputs.VERSION }}.vsix
+          asset_content_type: application/vsix
+
+      - name: Upload to VS Code Marketplace
+        if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+        run: |
+          if [ -n "$VSCE_PAT" ]; then
+            npm install -g @vscode/vsce
+            vsce publish -p $VSCE_PAT
+            echo "✅ Published to VS Code Marketplace"
+          else
+            echo "⚠️ VSCE_PAT secret not set, skipping marketplace publish"
+          fi
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        continue-on-error: true  # Don't fail if marketplace publish fails

@@ -25,3 +25,4 @@ docs/**
 .env.*
 **/.DS_Store
 **/Thumbs.db
+media/example/

@@ -1,0 +1,128 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.vscode/**'
+      - 'media/example/**'
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.vscode/**'
+      - 'media/example/**'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [18.x, 20.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ matrix.node-version }}-
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile TypeScript
+        run: npm run compile
+
+      - name: Build webview
+        run: npm run build-webview
+
+      - name: Package extension
+        run: npm run package
+
+      - name: Upload VSIX artifact
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '18.x'
+        uses: actions/upload-artifact@v3
+        with:
+          name: vscode-github-desktop-vsix
+          path: '*.vsix'
+
+  validate:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download VSIX artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: vscode-github-desktop-vsix
+
+      - name: Validate extension manifest
+        run: |
+          echo "Validating package.json..."
+          node -e "
+          const pkg = require('./package.json');
+
+          // Check required fields
+          const required = ['name', 'displayName', 'description', 'version', 'engines', 'publisher'];
+          for (const field of required) {
+            if (!pkg[field]) {
+              console.error(\`Missing required field: \${field}\`);
+              process.exit(1);
+            }
+          }
+
+          // Validate version format
+          if (!/^\d+\.\d+\.\d+$/.test(pkg.version)) {
+            console.error('Invalid version format. Use semantic versioning (x.y.z)');
+            process.exit(1);
+          }
+
+          // Check VS Code engine compatibility
+          if (!pkg.engines.vscode || !pkg.engines.vscode.includes('1.84.0')) {
+            console.error('VS Code engine version should be >= 1.84.0');
+            process.exit(1);
+          }
+
+          console.log('✓ Extension manifest is valid');
+          console.log(\`  Name: \${pkg.name}\`);
+          console.log(\`  Version: \${pkg.version}\`);
+          console.log(\`  Publisher: \${pkg.publisher}\`);
+          "
+
+      - name: Check VSIX size
+        run: |
+          VSIX_FILE=$(ls *.vsix | head -1)
+          SIZE=$(stat -c%s "$VSIX_FILE" 2>/dev/null || stat -f%z "$VSIX_FILE" 2>/dev/null)
+          SIZE_MB=$((SIZE / 1048576))
+          echo "VSIX file size: ${SIZE_MB}MB"
+
+          if [ $SIZE_MB -gt 100 ]; then
+            echo "Warning: VSIX file is larger than 100MB. Consider optimizing bundle size."
+          fi
