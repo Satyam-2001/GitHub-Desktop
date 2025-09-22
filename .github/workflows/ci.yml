@@ -35,7 +35,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Cache dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
@@ -57,7 +57,7 @@ jobs:
 
       - name: Upload VSIX artifact
         if: matrix.os == 'ubuntu-latest' && matrix.node-version == '18.x'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: vscode-github-desktop-vsix
           path: '*.vsix'
@@ -79,7 +79,7 @@ jobs:
         run: npm ci
 
       - name: Download VSIX artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: vscode-github-desktop-vsix
 

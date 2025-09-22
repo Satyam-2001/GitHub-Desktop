@@ -59,13 +59,10 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref }}
-          release_name: GitHub Desktop for VS Code v${{ steps.get_version.outputs.VERSION }}
+          name: GitHub Desktop for VS Code v${{ steps.get_version.outputs.VERSION }}
           body: |
             # GitHub Desktop for VS Code v${{ steps.get_version.outputs.VERSION }}
 
@@ -96,16 +93,10 @@ jobs:
 
           draft: false
           prerelease: false
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
+          files: |
+            vscode-github-desktop-${{ steps.get_version.outputs.VERSION }}.vsix
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./vscode-github-desktop-${{ steps.get_version.outputs.VERSION }}.vsix
-          asset_name: vscode-github-desktop-${{ steps.get_version.outputs.VERSION }}.vsix
-          asset_content_type: application/vsix
 
       - name: Upload to VS Code Marketplace
         if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
