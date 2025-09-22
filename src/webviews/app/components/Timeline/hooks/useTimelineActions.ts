@@ -176,6 +176,7 @@ export const useTimelineActions = ({
     handleContextMenuClose();
   };
 
+
   return {
     handleFileToggle,
     handleStageFiles,

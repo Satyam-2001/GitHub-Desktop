@@ -98,9 +98,6 @@ export async function activate(
     })
   );
 
-  void vscode.commands.executeCommand("workbench.view.extension.githubDesktop");
-  void vscode.commands.executeCommand("githubDesktop.accounts.focus");
-
   await syncWorkspaceRepositories(accountManager, repositoryManager);
   refreshAllViews();
 

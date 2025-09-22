@@ -33,6 +33,46 @@
     "contributes": {
         "commands": [
             {
+                "command": "githubDesktop.commit.reset",
+                "title": "Reset to Commit",
+                "category": "GitHub Desktop"
+            },
+            {
+                "command": "githubDesktop.commit.checkout",
+                "title": "Checkout Commit",
+                "category": "GitHub Desktop"
+            },
+            {
+                "command": "githubDesktop.commit.revert",
+                "title": "Revert Commit",
+                "category": "GitHub Desktop"
+            },
+            {
+                "command": "githubDesktop.commit.createBranch",
+                "title": "Create Branch from Commit",
+                "category": "GitHub Desktop"
+            },
+            {
+                "command": "githubDesktop.commit.createTag",
+                "title": "Create Tag",
+                "category": "GitHub Desktop"
+            },
+            {
+                "command": "githubDesktop.commit.cherryPick",
+                "title": "Cherry-pick Commit",
+                "category": "GitHub Desktop"
+            },
+            {
+                "command": "githubDesktop.commit.copySha",
+                "title": "Copy SHA",
+                "category": "GitHub Desktop"
+            },
+            {
+                "command": "githubDesktop.commit.viewOnGitHub",
+                "title": "View on GitHub",
+                "category": "GitHub Desktop"
+            },
+            {
                 "command": "githubDesktop.signIn",
                 "title": "GitHub Desktop: Sign In",
                 "category": "GitHub Desktop"
@@ -91,7 +131,7 @@
             "githubDesktop": [
                 {
                     "id": "githubDesktop.timeline",
-                    "name": "Changes & History",
+                    "name": "History",
                     "type": "webview",
                     "icon": "$(history)"
                 },

@@ -1,18 +1,29 @@
-import { useState, useEffect } from 'react';
-import { TimelineState, TabType, ContextMenuState } from '../types/timeline.types';
-import { GitCommit, VSCodeBridge } from '../../../bridge';
+import { useState, useEffect } from "react";
+import {
+  TimelineState,
+  TabType,
+  ContextMenuState,
+} from "../types/timeline.types";
+import { GitCommit, VSCodeBridge } from "../../../bridge";
 
-export const useTimelineState = (bridge: VSCodeBridge, history: GitCommit[], commitsOffset: number) => {
-  const [activeTab, setActiveTab] = useState<TabType>('changes');
-  const [commitMessage, setCommitMessage] = useState('');
+export const useTimelineState = (
+  bridge: VSCodeBridge,
+  history: GitCommit[],
+  commitsOffset: number
+) => {
+  const [activeTab, setActiveTab] = useState<TabType>("history");
+  const [commitMessage, setCommitMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [newBranchDialog, setNewBranchDialog] = useState(false);
-  const [newBranchName, setNewBranchName] = useState('');
-  const [uncommittedChangesDialog, setUncommittedChangesDialog] = useState(false);
+  const [newBranchName, setNewBranchName] = useState("");
+  const [uncommittedChangesDialog, setUncommittedChangesDialog] =
+    useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [allCommits, setAllCommits] = useState<GitCommit[]>([]);
-  const [selectedCommitHash, setSelectedCommitHash] = useState<string | null>(null);
+  const [selectedCommitHash, setSelectedCommitHash] = useState<string | null>(
+    null
+  );
 
   // Update allCommits when history changes
   useEffect(() => {
@@ -24,8 +35,8 @@ export const useTimelineState = (bridge: VSCodeBridge, history: GitCommit[], com
   // Handle load more commits response
   useEffect(() => {
     const handleMessage = (message: any) => {
-      if (message.command === 'loadMoreCommitsResponse') {
-        setAllCommits(prev => [...prev, ...message.history]);
+      if (message.command === "loadMoreCommitsResponse") {
+        setAllCommits((prev) => [...prev, ...message.history]);
         setIsLoadingMore(false);
       }
     };
@@ -60,6 +71,6 @@ export const useTimelineState = (bridge: VSCodeBridge, history: GitCommit[], com
       setIsLoadingMore,
       setAllCommits,
       setSelectedCommitHash,
-    }
+    },
   };
 };

@@ -7,7 +7,7 @@ import { TimelineHeader } from './components/TimelineHeader';
 import { TimelineTabs } from './components/TimelineTabs';
 import { ChangesView } from './components/ChangesView';
 import { HistoryView } from './components/HistoryView';
-import { ContextMenu } from './components/ContextMenu';
+import { ContextMenuAdjusted } from './components/ContextMenuAdjusted';
 import { NewBranchDialog } from './components/NewBranchDialog';
 import { UncommittedChangesDialog } from './components/UncommittedChangesDialog';
 
@@ -65,12 +65,12 @@ export const Timeline: React.FC<TimelineProps> = ({
       />
 
       {/* Tabs */}
-      <TimelineTabs
+      {/* <TimelineTabs
         activeTab={state.activeTab}
         changes={changes}
         history={history}
         onTabChange={actions.setActiveTab}
-      />
+      /> */}
 
       {/* Content */}
       <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
@@ -103,7 +103,7 @@ export const Timeline: React.FC<TimelineProps> = ({
 
       {/* Context Menu */}
       {state.contextMenu && (
-        <ContextMenu
+        <ContextMenuAdjusted
           contextMenu={state.contextMenu}
           onClose={timelineActions.handleContextMenuClose}
           onAction={timelineActions.handleContextMenuAction}
