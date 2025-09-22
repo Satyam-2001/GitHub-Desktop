@@ -2,6 +2,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import simpleGit from 'simple-git';
 import { RepositoryManager } from '../../../core/repositories/repository-manager';
+import { AccountManager } from '../../../core/accounts/account-manager';
 import { getPrimaryRepository } from '../../../shared/utils/repo-selection';
 import { CommitDetailViewProvider } from '../../commitDetail/commit-detail-view-provider';
 import { WebviewMessage, FileIconInfo } from '../interfaces/timeline-view-provider.interface';
@@ -11,6 +12,7 @@ export class MessageHandlerService {
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly repositories: RepositoryManager,
+    private readonly accounts: AccountManager,
     private readonly commitDetailProvider: CommitDetailViewProvider,
     private readonly gitService: GitOperationsService,
     private readonly view: vscode.WebviewView
@@ -128,6 +130,90 @@ export class MessageHandlerService {
     }
   }
 
+  private async configureGitWithAuth(repositoryPath: string): Promise<any | null> {
+    const activeAccount = this.accounts.getActiveAccount();
+    if (!activeAccount) {
+      return null;
+    }
+
+    const token = await this.accounts.getToken(activeAccount.id);
+    if (!token) {
+      return null;
+    }
+
+    const git = simpleGit(repositoryPath);
+
+    // Configure git with authentication for GitHub operations
+    try {
+      // Get the repository info to determine the remote URL format
+      const remotes = await git.getRemotes(true);
+      const origin = remotes.find(remote => remote.name === 'origin');
+
+      if (origin && origin.refs.fetch) {
+        let remoteUrl = origin.refs.fetch;
+
+        // If it's a GitHub HTTPS URL, update it with the token
+        if (remoteUrl.includes('github.com')) {
+          // Convert SSH to HTTPS if necessary
+          if (remoteUrl.startsWith('git@github.com:')) {
+            remoteUrl = remoteUrl.replace('git@github.com:', 'https://github.com/');
+            if (!remoteUrl.endsWith('.git')) {
+              remoteUrl += '.git';
+            }
+          }
+
+          // Add authentication to HTTPS URL
+          if (remoteUrl.startsWith('https://github.com/')) {
+            const urlWithAuth = remoteUrl.replace(
+              'https://github.com/',
+              `https://${encodeURIComponent(activeAccount.login)}:${encodeURIComponent(token)}@github.com/`
+            );
+
+            // Temporarily update the remote URL for this operation
+            await git.remote(['set-url', 'origin', urlWithAuth]);
+
+            // Return git instance with a cleanup function
+            const originalUrl = remoteUrl;
+            const gitWithCleanup = {
+              ...git,
+              push: async (...args: any[]) => {
+                try {
+                  const result = await git.push(...args);
+                  // Restore original URL after operation
+                  await git.remote(['set-url', 'origin', originalUrl]);
+                  return result;
+                } catch (error) {
+                  // Restore original URL even on error
+                  await git.remote(['set-url', 'origin', originalUrl]);
+                  throw error;
+                }
+              },
+              pull: async (...args: any[]) => {
+                try {
+                  const result = await git.pull(...args);
+                  // Restore original URL after operation
+                  await git.remote(['set-url', 'origin', originalUrl]);
+                  return result;
+                } catch (error) {
+                  // Restore original URL even on error
+                  await git.remote(['set-url', 'origin', originalUrl]);
+                  throw error;
+                }
+              }
+            };
+
+            return gitWithCleanup;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to configure git with auth:', error);
+    }
+
+    // Return regular git instance if no special auth needed
+    return git;
+  }
+
   private async handleRefresh(): Promise<void> {
     try {
       const data = await this.gitService.getRepositoryData();
@@ -218,7 +304,12 @@ export class MessageHandlerService {
     if (!repository) return;
 
     try {
-      const git = simpleGit(repository.localPath);
+      const git = await this.configureGitWithAuth(repository.localPath);
+      if (!git) {
+        vscode.window.showErrorMessage('No authenticated GitHub account found. Please sign in first.');
+        return;
+      }
+
       await git.push();
       await this.handleRefresh(); // Refresh all data including remote status
       vscode.window.showInformationMessage('Pushed successfully');
@@ -232,7 +323,12 @@ export class MessageHandlerService {
     if (!repository) return;
 
     try {
-      const git = simpleGit(repository.localPath);
+      const git = await this.configureGitWithAuth(repository.localPath);
+      if (!git) {
+        vscode.window.showErrorMessage('No authenticated GitHub account found. Please sign in first.');
+        return;
+      }
+
       await git.pull();
       await this.handleRefresh();
       vscode.window.showInformationMessage('Pulled successfully');

@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { Octokit } from '@octokit/rest';
-import { createOAuthDeviceAuth } from '@octokit/auth-oauth-device';
 import { execFile } from 'child_process';
 import { randomUUID } from 'crypto';
 import { promisify } from 'util';
@@ -72,14 +71,9 @@ export class AccountManager {
     const signInMethod = await vscode.window.showQuickPick(
       [
         {
-          label: '$(browser) Sign in with Browser',
-          description: 'Authenticate using your default browser (Recommended)',
+          label: '$(browser) Sign in with GitHub',
+          description: 'Authenticate using VS Code\'s built-in GitHub authentication (Recommended)',
           value: 'browser'
-        },
-        {
-          label: '$(device-mobile) Sign in with Device Code',
-          description: 'Use device code flow for authentication',
-          value: 'device'
         },
         ...(cliInfo ? [{
           label: '$(github) Use GitHub CLI',
@@ -117,8 +111,6 @@ export class AccountManager {
     switch (signInMethod.value) {
       case 'browser':
         return this.signInWithBrowser();
-      case 'device':
-        return this.signInWithDeviceCode();
       case 'cli':
         return this.authenticateWithCLI();
       case 'token':
@@ -364,55 +356,19 @@ export class AccountManager {
 
   private async signInWithBrowser(): Promise<StoredAccount | undefined> {
     try {
-      // Use GitHub's OAuth Device Flow
-      const auth = createOAuthDeviceAuth({
-        clientType: 'oauth-app',
-        clientId: 'Iv1.b507a08c87ecfe98', // GitHub's official OAuth App for VS Code extensions
-        scopes: ['repo', 'user:email', 'read:org'],
-        onVerification: (verification: any) => {
-          // Open browser and show the user code
-          vscode.env.openExternal(vscode.Uri.parse(verification.verification_uri));
-          vscode.window.showInformationMessage(
-            `Opening browser to authenticate. Use code: ${verification.user_code}`,
-            'Copy Code'
-          ).then(selection => {
-            if (selection === 'Copy Code') {
-              vscode.env.clipboard.writeText(verification.user_code);
-            }
-          });
-        }
+      // Use VS Code's built-in GitHub authentication
+      const session = await vscode.authentication.getSession('github', ['repo', 'user:email', 'read:org'], {
+        createIfNone: true
       });
 
-      const { token } = await auth({ type: 'oauth' });
-      return this.completeAuthentication(token, 'browser authentication');
+      if (!session) {
+        vscode.window.showErrorMessage('Failed to authenticate with GitHub.');
+        return undefined;
+      }
+
+      return this.completeAuthentication(session.accessToken, 'VS Code GitHub authentication');
     } catch (error) {
       vscode.window.showErrorMessage(`Browser authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      return undefined;
-    }
-  }
-
-  private async signInWithDeviceCode(): Promise<StoredAccount | undefined> {
-    try {
-      const auth = createOAuthDeviceAuth({
-        clientType: 'oauth-app',
-        clientId: 'Iv1.b507a08c87ecfe98',
-        scopes: ['repo', 'user:email', 'read:org'],
-        onVerification: (verification: any) => {
-          const message = `Go to: ${verification.verification_uri}\nEnter code: ${verification.user_code}`;
-          vscode.window.showInformationMessage(message, 'Copy Code', 'Open URL').then(selection => {
-            if (selection === 'Copy Code') {
-              vscode.env.clipboard.writeText(verification.user_code);
-            } else if (selection === 'Open URL') {
-              vscode.env.openExternal(vscode.Uri.parse(verification.verification_uri));
-            }
-          });
-        }
-      });
-
-      const { token } = await auth({ type: 'oauth' });
-      return this.completeAuthentication(token, 'device code authentication');
-    } catch (error) {
-      vscode.window.showErrorMessage(`Device code authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return undefined;
     }
   }

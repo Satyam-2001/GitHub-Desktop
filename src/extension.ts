@@ -34,6 +34,7 @@ export async function activate(
   const timelineProvider = new TimelineViewProvider(
     context,
     repositoryManager,
+    accountManager,
     commitDetailProvider
   );
 

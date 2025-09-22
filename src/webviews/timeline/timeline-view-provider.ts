@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { RepositoryManager } from '../../core/repositories/repository-manager';
+import { AccountManager } from '../../core/accounts/account-manager';
 import { CommitDetailViewProvider } from '../commitDetail/commit-detail-view-provider';
 import { ITimelineViewProvider, WebviewMessage } from './interfaces/timeline-view-provider.interface';
 import { GitOperationsService } from './services/git-operations.service';
@@ -17,6 +18,7 @@ export class TimelineViewProvider implements ITimelineViewProvider {
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly repositories: RepositoryManager,
+    private readonly accounts: AccountManager,
     private readonly commitDetailProvider: CommitDetailViewProvider
   ) {
     this.gitService = new GitOperationsService(repositories);
@@ -56,6 +58,7 @@ export class TimelineViewProvider implements ITimelineViewProvider {
     this.messageHandler = new MessageHandlerService(
       this.context,
       this.repositories,
+      this.accounts,
       this.commitDetailProvider,
       this.gitService,
       this.view
