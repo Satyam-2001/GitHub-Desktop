@@ -121,7 +121,8 @@
       {
         "command": "githubDesktop.addAccount",
         "title": "Add GitHub Account",
-        "category": "GitHub Desktop"
+        "category": "GitHub Desktop",
+        "icon": "$(plus)"
       },
       {
         "command": "githubDesktop.manageAccounts",
@@ -136,7 +137,8 @@
       {
         "command": "githubDesktop.refreshAccounts",
         "title": "Refresh Accounts",
-        "category": "GitHub Desktop"
+        "category": "GitHub Desktop",
+        "icon": "$(refresh)"
       }
     ],
     "viewsContainers": {

@@ -5,13 +5,10 @@ export type {
   ContextMenuState,
   TimelineState,
 } from "./types/timeline.types";
-export {
-  formatCommitDate,
-  generateAvatarUrl,
-  getStatusColor,
-} from "./utils/timeline.utils";
+export { formatCommitDate, getStatusColor } from "./utils/timeline.utils";
 export { useTimelineState } from "./hooks/useTimelineState";
 export { useTimelineActions } from "./hooks/useTimelineActions";
+export { generateAvatarUrl } from "../CommitDetailPanel/utils/avatar.utils";
 
 // Component exports
 export { TimelineHeader } from "./components/TimelineHeader";

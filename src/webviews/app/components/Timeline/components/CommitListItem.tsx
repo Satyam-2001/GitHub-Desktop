@@ -12,7 +12,8 @@ import {
   ArrowUpward as UpArrowIcon,
 } from "@mui/icons-material";
 import { GitCommit } from "../../../bridge";
-import { formatCommitDate, generateAvatarUrl } from "../utils/timeline.utils";
+import { formatCommitDate } from "../utils/timeline.utils";
+import { generateAvatarUrl } from "..";
 
 interface CommitListItemProps {
   commit: GitCommit;
@@ -64,12 +65,20 @@ export const CommitListItem: React.FC<CommitListItemProps> = ({
         secondary={
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
             <Avatar
-              src={generateAvatarUrl(commit.email || "", commit.author)}
+              src={generateAvatarUrl(
+                commit.email || commit.author || "unknown",
+                commit.author || "Unknown"
+              )}
               sx={{
                 width: 16,
                 height: 16,
                 fontSize: "10px",
                 bgcolor: "var(--vscode-button-background)",
+              }}
+              onError={(e) => {
+                // Fallback if avatar fails to load
+                console.log("Avatar failed to load for:", commit.author);
+                (e.target as HTMLImageElement).src = "";
               }}
             >
               {(commit.author || "U").charAt(0).toUpperCase()}
@@ -132,22 +141,22 @@ export const CommitListItem: React.FC<CommitListItemProps> = ({
             {commit.isPushed === false && (
               <Box
                 sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   width: 24,
                   height: 24,
-                  borderRadius: '6px',
-                  bgcolor: 'rgba(255, 255, 255, 0.05)',
-                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
-                  ml: 'auto',
+                  borderRadius: "6px",
+                  bgcolor: "rgba(255, 255, 255, 0.05)",
+                  boxShadow: "0 1px 3px rgba(0, 0, 0, 0.2)",
+                  ml: "auto",
                 }}
               >
                 <UpArrowIcon
                   sx={{
                     fontSize: 16,
-                    fontWeight: 'bold',
-                    color: 'var(--vscode-badge-foreground)',
+                    fontWeight: "bold",
+                    color: "var(--vscode-badge-foreground)",
                   }}
                 />
               </Box>

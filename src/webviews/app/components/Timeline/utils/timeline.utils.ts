@@ -35,22 +35,6 @@ export const formatCommitDate = (dateString: string): string => {
   return date.format("D MMMM, YYYY [at] HH:mm");
 };
 
-export const generateAvatarUrl = (email: string, name: string): string => {
-  const colors = [
-    "#ff6b6b",
-    "#4ecdc4",
-    "#45b7d1",
-    "#f9ca24",
-    "#6c5ce7",
-    "#fd79a8",
-  ];
-  const safeEmail = email || "user@example.com";
-  const safeName = name || "Unknown";
-  const colorIndex = safeEmail.charCodeAt(0) % colors.length;
-  const color = colors[colorIndex] || colors[0];
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(safeName)}&background=${color.slice(1)}&color=fff&size=32`;
-};
-
 export const getStatusColor = (status: string): string => {
   const safeStatus = status || "";
   switch (safeStatus.charAt(0)) {
