@@ -452,27 +452,63 @@ export class GitOperationsService {
       // Get last fetch time from git reflog
       let lastFetched: Date | null = null;
       try {
+        // Try to get fetch time from reflog entries for origin
         const fetchLog = await git.raw([
           "reflog",
           "show",
-          "--grep=fetch",
+          "refs/remotes/origin/HEAD",
           "--date=iso",
           "-n",
           "1",
           "--format=%cd",
         ]);
         if (fetchLog.trim()) {
-          lastFetched = new Date(fetchLog.trim());
+          const fetchDate = new Date(fetchLog.trim());
+          if (!isNaN(fetchDate.getTime())) {
+            lastFetched = fetchDate;
+          }
         }
       } catch {
-        // If reflog fails, check the FETCH_HEAD file modification time
+        // Fallback: Try to get from main/master branch reflog
         try {
-          const fs = require("fs");
-          const fetchHeadPath = path.join(git.gitDir || ".git", "FETCH_HEAD");
-          const stats = fs.statSync(fetchHeadPath);
-          lastFetched = stats.mtime;
+          const branches = [remoteBranch, "main", "master"];
+          for (const branch of branches) {
+            if (!branch) continue;
+            try {
+              const branchLog = await git.raw([
+                "reflog",
+                "show",
+                `refs/remotes/origin/${branch.replace('origin/', '')}`,
+                "--date=iso",
+                "-n",
+                "1",
+                "--format=%cd",
+              ]);
+              if (branchLog.trim()) {
+                const branchDate = new Date(branchLog.trim());
+                if (!isNaN(branchDate.getTime())) {
+                  lastFetched = branchDate;
+                  break;
+                }
+              }
+            } catch {
+              // Continue to next branch
+            }
+          }
         } catch {
-          // Ignore if FETCH_HEAD doesn't exist
+          // Final fallback: check FETCH_HEAD file modification time
+          try {
+            const fs = require("fs");
+            const fetchHeadPath = path.join(git.gitDir || ".git", "FETCH_HEAD");
+            const stats = fs.statSync(fetchHeadPath);
+            // Only use FETCH_HEAD if it's recent (within last 30 days)
+            const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+            if (stats.mtime.getTime() > thirtyDaysAgo) {
+              lastFetched = stats.mtime;
+            }
+          } catch {
+            // Ignore if FETCH_HEAD doesn't exist or is inaccessible
+          }
         }
       }
 

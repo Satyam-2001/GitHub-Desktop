@@ -232,6 +232,20 @@ export class MessageHandlerService {
               }
             };
 
+            // Override fetch method
+            gitWithAuth.fetch = async function (...args: any[]) {
+              try {
+                const result = await git.fetch(...args);
+                // Restore original URL after successful fetch
+                await git.remote(["set-url", "origin", originalUrl]);
+                return result;
+              } catch (error) {
+                // Restore original URL even on error
+                await git.remote(["set-url", "origin", originalUrl]);
+                throw error;
+              }
+            };
+
             return gitWithAuth;
           }
         }
@@ -761,15 +775,38 @@ export class MessageHandlerService {
 
   private async handleFetch(): Promise<void> {
     const repository = getPrimaryRepository(this.repositories);
-    if (!repository) return;
+    if (!repository) {
+      vscode.window.showErrorMessage(
+        "No repository found in the current workspace",
+      );
+      return;
+    }
 
     try {
-      const git = simpleGit(repository.localPath);
+      // Log repository info for debugging
+      console.log(
+        "Fetching from repository:",
+        repository.name,
+        "at",
+        repository.localPath,
+      );
+
+      const git = await this.configureGitWithAuth(repository.localPath);
+      if (!git) {
+        vscode.window.showErrorMessage(
+          "No authenticated GitHub account found. Please sign in first.",
+        );
+        return;
+      }
+
       await git.fetch();
       vscode.window.showInformationMessage("Fetched from remote successfully");
       await this.handleRefresh();
-    } catch (error) {
-      vscode.window.showErrorMessage(`Failed to fetch: ${error}`);
+    } catch (error: any) {
+      console.error("Fetch failed with error:", error);
+      vscode.window.showErrorMessage(
+        `Failed to fetch: ${error.message || error}`,
+      );
     }
   }
 
