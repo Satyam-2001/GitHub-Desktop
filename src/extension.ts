@@ -8,6 +8,7 @@ import { RepositoryManager } from "./core/repositories/repository-manager";
 import { AccountsProvider } from "./ui/tree-views/accounts-provider";
 import { RepositoriesProvider } from "./ui/tree-views/repositories-provider";
 import { TimelineViewProvider } from "./webviews/timeline/timeline-view-provider";
+import { HistoryExplorerViewProvider } from "./webviews/historyExplorer/history-explorer-view-provider";
 import { CommitDetailViewProvider } from "./webviews/commitDetail/commit-detail-view-provider";
 import { TrackedRepository } from "./shared/types";
 
@@ -31,6 +32,11 @@ export async function activate(
     context,
     repositoryManager,
   );
+  const historyExplorerProvider = new HistoryExplorerViewProvider(
+    context,
+    repositoryManager,
+    commitDetailProvider,
+  );
   const timelineProvider = new TimelineViewProvider(
     context,
     repositoryManager,
@@ -40,6 +46,7 @@ export async function activate(
 
   const refreshAllViews = () => {
     void timelineProvider.refresh();
+    void historyExplorerProvider.refresh();
     accountsProvider.refresh();
     repositoriesProvider.refresh();
   };
@@ -56,6 +63,10 @@ export async function activate(
     vscode.window.registerWebviewViewProvider(
       "githubDesktop.timeline",
       timelineProvider,
+    ),
+    vscode.window.registerWebviewViewProvider(
+      HistoryExplorerViewProvider.viewType,
+      historyExplorerProvider,
     ),
     vscode.commands.registerCommand("githubDesktop.signIn", async () => {
       const account = await accountManager.signIn();
@@ -82,7 +93,7 @@ export async function activate(
       (accountId: string) => accountsProvider.switchToAccount(accountId),
     ),
     vscode.commands.registerCommand("githubDesktop.cloneRepository", () =>
-      cloneRepository(accountManager, repositoryManager, timelineProvider),
+      cloneRepository(accountManager, repositoryManager, timelineProvider, historyExplorerProvider),
     ),
     vscode.commands.registerCommand(
       "githubDesktop.openRepository",
@@ -95,7 +106,7 @@ export async function activate(
       refreshAllViews(),
     ),
     vscode.commands.registerCommand("githubDesktop.addAccount", async () => {
-      const account = await accountManager.signIn();
+      const account = await accountManager.addAccount();
       if (account) {
         await linkUnassignedRepositories(repositoryManager, account.id);
         refreshAllViews();
@@ -169,9 +180,10 @@ export async function activate(
     vscode.commands.registerCommand("githubDesktop.refreshAccounts", () => {
       accountsProvider.refresh();
     }),
-    vscode.workspace.onDidSaveTextDocument(
-      () => void timelineProvider.refresh(),
-    ),
+    vscode.workspace.onDidSaveTextDocument(() => {
+      void timelineProvider.refresh();
+      void historyExplorerProvider.refresh();
+    }),
     vscode.workspace.onDidChangeWorkspaceFolders(async () => {
       await syncWorkspaceRepositories(accountManager, repositoryManager);
       refreshAllViews();
@@ -195,6 +207,7 @@ async function cloneRepository(
   accounts: AccountManager,
   repositories: RepositoryManager,
   timeline: TimelineViewProvider,
+  historyExplorer: HistoryExplorerViewProvider,
 ): Promise<void> {
   const account = accounts.getActiveAccount() ?? (await accounts.signIn());
   if (!account) {
@@ -280,6 +293,7 @@ async function cloneRepository(
       remoteUrl: cleanRemote,
     });
     await timeline.refresh();
+    await historyExplorer.refresh();
     vscode.window.showInformationMessage(
       `Cloned ${parsed.owner}/${parsed.name} successfully.`,
     );
@@ -485,3 +499,11 @@ async function linkUnassignedRepositories(
     await repositories.updateRepository(repo.id, { accountId });
   }
 }
+
+
+
+
+
+
+
+

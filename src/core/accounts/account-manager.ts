@@ -63,7 +63,7 @@ export class AccountManager {
     return this.accounts.find((account) => account.id === id);
   }
 
-  async signIn(): Promise<StoredAccount | undefined> {
+  async signIn(forceNew: boolean = false): Promise<StoredAccount | undefined> {
     // Check if GitHub CLI is available
     const cliInfo = await this.getGitHubCliInfo();
 
@@ -108,7 +108,7 @@ export class AccountManager {
           : []),
       ],
       {
-        placeHolder: "Choose how to sign in to GitHub",
+        placeHolder: forceNew ? "Choose how to add another GitHub account" : "Choose how to sign in to GitHub",
         ignoreFocusOut: true,
       },
     );
@@ -119,7 +119,7 @@ export class AccountManager {
 
     switch (signInMethod.value) {
       case "browser":
-        return this.signInWithBrowser();
+        return this.signInWithBrowser(forceNew);
       case "cli":
         return this.authenticateWithCLI();
       case "token":
@@ -131,6 +131,10 @@ export class AccountManager {
       default:
         return undefined;
     }
+  }
+
+  async addAccount(): Promise<StoredAccount | undefined> {
+    return this.signIn(true);
   }
 
   async signOut(accountId?: string): Promise<void> {
@@ -398,15 +402,15 @@ export class AccountManager {
     return this.completeAuthentication(cliToken.token, cliToken.source);
   }
 
-  private async signInWithBrowser(): Promise<StoredAccount | undefined> {
+  private async signInWithBrowser(forceNew: boolean = false): Promise<StoredAccount | undefined> {
     try {
       // Use VS Code's built-in GitHub authentication
       const session = await vscode.authentication.getSession(
         "github",
         ["repo", "user:email", "read:org"],
-        {
-          createIfNone: true,
-        },
+        forceNew
+          ? { forceNewSession: true }
+          : { createIfNone: true }
       );
 
       if (!session) {
