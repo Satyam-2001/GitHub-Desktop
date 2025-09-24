@@ -35,14 +35,40 @@ class AccountItem extends vscode.TreeItem {
     return description;
   }
 
-  private getIcon(): vscode.ThemeIcon {
+  private getIcon(): any {
+    // Debug logging
+    console.log(`Avatar URL for ${this.account.login}:`, this.account.avatarUrl);
+
+    // Try to use user's avatar if available
+    if (this.account.avatarUrl) {
+      try {
+        // GitHub avatar URLs support size parameters
+        const sizedAvatarUrl = this.account.avatarUrl.includes('?')
+          ? `${this.account.avatarUrl}&s=32`
+          : `${this.account.avatarUrl}?s=32`;
+
+        const avatarUri = vscode.Uri.parse(sizedAvatarUrl);
+        console.log(`Using avatar URI for ${this.account.login}:`, avatarUri.toString());
+        return avatarUri;
+      } catch (error) {
+        console.log(`Failed to parse avatar URL for ${this.account.login}:`, error);
+      }
+    }
+
+    // Fallback to theme icons
     if (this.active) {
       return new vscode.ThemeIcon(
         "account",
         new vscode.ThemeColor("charts.green"),
       );
     }
-    return new vscode.ThemeIcon("person");
+
+    // Use different icons based on account type
+    if (this.account.baseUrl && !this.account.baseUrl.includes("github.com")) {
+      return new vscode.ThemeIcon("organization"); // Enterprise account
+    }
+
+    return new vscode.ThemeIcon("github"); // Regular GitHub account
   }
 
   private getTooltip(): string {
@@ -113,6 +139,13 @@ export class AccountsProvider implements vscode.TreeDataProvider<TreeItem> {
   getChildren(): vscode.ProviderResult<TreeItem[]> {
     const accounts = this.accountManager.getAccounts();
     const items: TreeItem[] = [];
+
+    // Debug logging for accounts
+    console.log('AccountsProvider: Retrieved accounts:', accounts.map(acc => ({
+      login: acc.login,
+      name: acc.name,
+      avatarUrl: acc.avatarUrl
+    })));
 
     if (accounts.length === 0) {
       // Show initial sign-in item when no accounts exist
